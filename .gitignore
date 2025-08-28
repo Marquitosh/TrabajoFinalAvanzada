@@ -1,0 +1,43 @@
+# Archivos de usuario de Visual Studio
+*.user
+*.userosscache
+*.sln.docstates
+
+# Archivos de build de Visual Studio
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+# Directorio de VS
+.vs/
+
+# Archivos de NuGet
+packages/
+
+# Archivos de MSTest
+TestResults/
+
+# Archivos de Resharper
+_ReSharper*/
+
+# Archivos de Azure
+*.azurepubxml
+*.pubxml
+
+# Archivos de publicación
+publish/
+
+# Archivos de SQL
+*.mdf
+*.ldf
+
+# Archivos de caché
+app.config
+App.config
