@@ -1,0 +1,75 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Panel de Usuario</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/AvanzadaWeb.styles.css" asp-append-version="true" />
+    <style>
+        .sidebar {
+            min-height: calc(100vh - 56px);
+            background-color: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+        }
+
+            .sidebar .nav-link {
+                color: #333;
+                padding: 0.75rem 1rem;
+            }
+
+                .sidebar .nav-link:hover {
+                    background-color: #e9ecef;
+                }
+
+                .sidebar .nav-link.active {
+                    background-color: #007bff;
+                    color: white;
+                }
+
+        .main-content {
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-dark bg-primary">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                    <i class="bi bi-wrench"></i> Taller Mecánico
+                </a>
+                <div class="d-flex">
+                    <span class="navbar-text me-3">
+                        Bienvenido, @User.Identity.Name
+                    </span>
+                    <a class="btn btn-outline-light btn-sm" asp-controller="Account" asp-action="Logout">
+                        <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar">
+                <partial name="_UserMenu" />
+            </div>
+
+            <!-- Main content -->
+            <main class="col-md-9 col-lg-10 main-content">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

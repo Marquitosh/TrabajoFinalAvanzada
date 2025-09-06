@@ -1,0 +1,36 @@
+﻿@model AvanzadaWeb.ViewModels.UsuarioViewModel
+@{
+    ViewData["Title"] = "Mi Perfil";
+    Layout = "_UserLayout";
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Información del Perfil</h5>
+            </div>
+            <div class="card-body">
+                <form>
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" class="form-control" value="@Model.Nombre" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Apellido</label>
+                        <input type="text" class="form-control" value="@Model.Apellido" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" value="@Model.Email" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Teléfono</label>
+                        <input type="text" class="form-control" value="@Model.Telefono" readonly>
+                    </div>
+                    <button type="button" class="btn btn-primary">Editar Información</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

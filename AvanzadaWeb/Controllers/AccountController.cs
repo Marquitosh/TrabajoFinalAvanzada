@@ -41,8 +41,6 @@ namespace AvanzadaWeb.Controllers
 
                     if (usuario != null)
                     {
-                        // En una aplicación real, aquí verificarías la contraseña hasheada
-                        // Por ahora, asumimos que el login es exitoso
 
                         // Crear objeto de sesión
                         var sessionUser = new SessionUser
@@ -58,7 +56,7 @@ namespace AvanzadaWeb.Controllers
                         // Guardar en sesión
                         HttpContext.Session.SetString("User", JsonSerializer.Serialize(sessionUser));
 
-                        return RedirectToAction("Index", "Home");
+                        return RedirectToAction("Dashboard", "Usuarios");
                     }
                     else
                     {

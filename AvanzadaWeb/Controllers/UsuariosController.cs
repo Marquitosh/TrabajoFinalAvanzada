@@ -1,6 +1,8 @@
+using AvanzadaWeb.Models;
 using AvanzadaWeb.Services;
 using AvanzadaWeb.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace AvanzadaWeb.Controllers
 {
@@ -13,6 +15,7 @@ namespace AvanzadaWeb.Controllers
             _apiService = apiService;
         }
 
+        // Acciones de administración (existentes)
         public async Task<IActionResult> Index()
         {
             var usuarios = await _apiService.GetAsync<List<UsuarioViewModel>>("usuarios");
@@ -56,6 +59,77 @@ namespace AvanzadaWeb.Controllers
         {
             await _apiService.DeleteAsync($"usuarios/{id}");
             return RedirectToAction(nameof(Index));
+        }
+
+        // Nuevas acciones para el panel de usuario
+        public IActionResult Dashboard()
+        {
+            return View();
+        }
+
+        public async Task<IActionResult> Profile()
+        {
+            try
+            {
+                var userJson = HttpContext.Session.GetString("User");
+                if (string.IsNullOrEmpty(userJson))
+                    return RedirectToAction("Login", "Account");
+
+                var sessionUser = JsonSerializer.Deserialize<SessionUser>(userJson);
+                var usuario = await _apiService.GetAsync<UsuarioViewModel>($"usuarios/{sessionUser.IDUsuario}");
+
+                return View(usuario);
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = "Error al cargar el perfil: " + ex.Message;
+                return View();
+            }
+        }
+
+        public async Task<IActionResult> MyVehicles()
+        {
+            try
+            {
+                var userJson = HttpContext.Session.GetString("User");
+                if (string.IsNullOrEmpty(userJson))
+                    return RedirectToAction("Login", "Account");
+
+                var sessionUser = JsonSerializer.Deserialize<SessionUser>(userJson);
+                var vehiculos = await _apiService.GetAsync<List<VehiculoViewModel>>($"vehiculos/Usuario/{sessionUser.IDUsuario}");
+
+                return View(vehiculos);
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = "Error al cargar los vehículos: " + ex.Message;
+                return View(new List<VehiculoViewModel>());
+            }
+        }
+
+        public async Task<IActionResult> MyAppointments()
+        {
+            try
+            {
+                var userJson = HttpContext.Session.GetString("User");
+                if (string.IsNullOrEmpty(userJson))
+                    return RedirectToAction("Login", "Account");
+
+                var sessionUser = JsonSerializer.Deserialize<SessionUser>(userJson);
+                var turnos = await _apiService.GetAsync<List<TurnoViewModel>>($"turnos/Usuario/{sessionUser.IDUsuario}");
+
+                return View(turnos);
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = "Error al cargar los turnos: " + ex.Message;
+                return View(new List<TurnoViewModel>());
+            }
+        }
+
+        public IActionResult RequestService()
+        {
+            return View();
         }
     }
 }
