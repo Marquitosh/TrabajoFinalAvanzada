@@ -1,33 +1,59 @@
 Pasos para levantar el proyecto
+1) Instalar Docker Desktop
 
-1)Instalar Docker Desktop
-  Asegurate de tener instalado Docker Desktop en tu PC.
+Asegurate de tener instalado Docker Desktop en tu PC.
 
-2)Levantar el contenedor de SQL Server
-  Una vez instalado, abrí la terminal (icono </> abajo a la derecha en Docker Desktop) y pegá el siguiente comando para crear el contenedor:
-  docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=Avanzada@1234" -p 1433:1433 --name sql-container -d mcr.microsoft.com/mssql/server:2022-latest
+2) Levantar el contenedor de SQL Server
 
+Una vez instalado, abrí la terminal (icono </> abajo a la derecha en Docker Desktop) y pegá el siguiente comando para crear el contenedor:
 
-3)Configurar la base de datos
-  Si el contenedor se creó correctamente, abrí SQL Server y ejecutá el script que está más abajo en este README.
-  Ese script ya tiene cargados algunos usuarios, tipos de combustible, etc., para que puedan probar las rutas.
+docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=Avanzada@1234" -p 1433:1433 --name sql-container -d mcr.microsoft.com/mssql/server:2022-latest
 
-4)Ejecutar el proyecto AvanzadaDB
-  Una vez hecho el pull desde visual studio, o directamente pueden descargar las carpetas y tirarlo donde tengan los proyectos en visual studio.
-  Corran el proyecto llamado AvanzadaDB.
-  Se va a abrir una página que permite probar directamente los CRUDs.
-  Usen esa página para testear lo que necesiten.
+3) Configurar la base de datos
 
-5)Ejecutar ambos proyectos
-  Si esta andando todo, para correr todo junto Click derecho en la solución -> Propiedades -> Proyectos de Inicio de Inicio Múltiple -> Selecciona "Iniciar" para ambos proyectos.
-  Ahora ya cuando ejecuten el proyecto se va a abrir tambien el front.
+Si el contenedor se creó correctamente, abrí SQL Server y ejecutá el script que está más abajo en este README.
+Ese script ya tiene cargados algunos usuarios, tipos de combustible, etc., para que puedan probar las rutas.
 
-6)Miren un poco la organizacion del proyecto 
-  en las carpetas controllers es donde estan los metodos. 
-  si quieren agregar una pagina creen una nueva carpeta en views.
-  si necesitan ver las estructuras de datos esta todo en models.
-  
-7)Reportar errores
+4) Ejecutar el proyecto AvanzadaDB
+
+Una vez hecho el pull desde Visual Studio (o descargando directamente las carpetas), abrí el proyecto en Visual Studio.
+
+Corré el proyecto llamado AvanzadaDB.
+
+Se va a abrir una página que permite probar directamente los CRUDs.
+
+Usen esa página para testear lo que necesiten.
+
+5) Ejecutar ambos proyectos (backend + frontend)
+
+Si todo anda bien, para correr todo junto:
+
+Click derecho en la solución
+
+Ir a Propiedades
+
+Seleccionar Proyectos de inicio múltiple
+
+Marcar ambos proyectos con la opción Iniciar
+
+De esta forma, cuando ejecuten la solución se va a levantar también el front.
+
+6) Organización del proyecto
+
+En la carpeta Controllers están los métodos de la API.
+
+Si necesitan ver las estructuras de datos, está todo en Models.
+
+Si quieren agregar una nueva página, créenla en la carpeta Views.
+
+👉 Además, ya les dejé creada una carpeta dentro de AvanzadaWeb/Views llamada Usuarios.
+Ahí están los archivos listos (vacíos por ahora), pero ya está todo apuntando hacia ellos.
+
+👉 El Dashboard muestra el panel de usuario. Para el diseño, fíjense que estoy usando el archivo _UserLayout.cshtml, que está en Views/Shared.
+Solo tienen que llamarlo al inicio de su archivo, tal como se hace en el Dashboard, para que se renderice la parte de diseño que aparece arriba.
+
+7) Reportar errores
+
 Si algo no funciona, avisen por el grupo y les doy una mano.
 
 
