@@ -47,7 +47,7 @@ Si necesitan ver las estructuras de datos, está todo en Models.
 Si quieren agregar una nueva página, créenla en la carpeta Views.
 
 👉 Además, ya les dejé creada una carpeta dentro de AvanzadaWeb/Views llamada Usuarios.
-Ahí están los archivos listos (vacíos por ahora), pero ya está todo apuntando hacia ellos.
+Ahí están los archivos listos (vacíos por ahora) par que ustedes le agreguen su parte de codigo, pero ya está todo apuntando hacia ellos.
 
 👉 El Dashboard muestra el panel de usuario. Para el diseño, fíjense que estoy usando el archivo _UserLayout.cshtml, que está en Views/Shared.
 Solo tienen que llamarlo al inicio de su archivo, tal como se hace en el Dashboard, para que se renderice la parte de diseño que aparece arriba.
