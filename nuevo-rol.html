@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Rol</title>
+    <link rel="stylesheet" href="nuevo-rol.css">
+</head>
+<body>
+    <header>
+        <h1>Crear Nuevo Rol</h1>
+    </header>
+
+    <main>
+        <section class="formulario-container">
+            <form id="form-nuevo-rol">
+                <div class="form-group">
+                    <label for="nombre-rol">Nombre del Rol:</label>
+                    <input type="text" id="nombre-rol" name="nombre-rol" required>
+                </div>
+                <h3>Páginas con acceso</h3>
+                <div class="paginas-acceso">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="pagina-inicio" name="paginas" value="inicio">
+                        <label for="pagina-inicio">Inicio</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="pagina-login" name="paginas" value="login">
+                        <label for="pagina-login">Login</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="pagina-panel-usuario" name="paginas" value="panel-usuario">
+                        <label for="pagina-panel-usuario">Panel de Usuario</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="pagina-mis-vehiculos" name="paginas" value="mis-vehiculos">
+                        <label for="pagina-mis-vehiculos">Mis Vehículos</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="pagina-mis-turnos" name="paginas" value="mis-turnos">
+                        <label for="pagina-mis-turnos">Mis Turnos</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="pagina-solicitar-servicio" name="paginas" value="solicitar-servicio">
+                        <label for="pagina-solicitar-servicio">Solicitar Servicio</label>
+                    </div>
+                    </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-guardar">Guardar Rol</button>
+                    <button type="button" class="btn-cancelar">Cancelar</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Lubricentro</p>
+    </footer>
+</body>
+</html>
