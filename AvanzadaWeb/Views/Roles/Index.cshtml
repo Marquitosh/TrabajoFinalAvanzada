@@ -1,0 +1,69 @@
+@{
+    ViewData["Title"] = "Gestión de Roles";
+    Layout = "_UserLayout";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Gestión de Roles</h2>
+            <a asp-controller="Roles" asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle"></i> Crear Nuevo Rol
+            </a>
+        </div>
+
+        <!-- Tarjeta de Roles Existentes -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-people"></i> Roles Existentes
+                </h5>
+            </div>
+            <div class="card-body">
+                @* Aquí se recorrerían los roles desde el modelo *@
+                <ul class="list-group list-group-flush">
+                    @* Ejemplo estático (reemplazar con @foreach en un modelo dinámico) *@
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Administrador</span>
+                        <div class="btn-group">
+                            <a asp-controller="Roles" asp-action="Edit" asp-route-id="1" class="btn btn-outline-info btn-sm">
+                                <i class="bi bi-pencil-square"></i> Editar
+                            </a>
+                            <form asp-controller="Roles" asp-action="Delete" asp-route-id="1" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </button>
+                            </form>
+                        </div>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Cliente</span>
+                        <div class="btn-group">
+                            <a asp-controller="Roles" asp-action="Edit" asp-route-id="2" class="btn btn-outline-info btn-sm">
+                                <i class="bi bi-pencil-square"></i> Editar
+                            </a>
+                            <form asp-controller="Roles" asp-action="Delete" asp-route-id="2" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </button>
+                            </form>
+                        </div>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Empleado</span>
+                        <div class="btn-group">
+                            <a asp-controller="Roles" asp-action="Edit" asp-route-id="3" class="btn btn-outline-info btn-sm">
+                                <i class="bi bi-pencil-square"></i> Editar
+                            </a>
+                            <form asp-controller="Roles" asp-action="Delete" asp-route-id="3" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </button>
+                            </form>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
