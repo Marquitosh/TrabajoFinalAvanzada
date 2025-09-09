@@ -1,0 +1,65 @@
+﻿@model IEnumerable<AvanzadaWeb.ViewModels.AppointmentViewModel>
+
+@{
+    ViewData["Title"] = "Gestionar Turnos";
+    Layout = "_UserLayout";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <h2 class="mb-4">Gestionar Turnos</h2>
+
+        @if (TempData["Message"] != null)
+        {
+            <div class="alert alert-info">@TempData["Message"]</div>
+        }
+
+        @foreach (var turno in Model)
+        {
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-light">
+                    <strong>@turno.Usuario</strong>
+                    <span class="text-muted ms-2">
+                        <i class="bi bi-calendar-event"></i> @turno.Fecha.ToString("dd/MM/yyyy") - @turno.Hora
+                    </span>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group mb-3">
+                        @foreach (var servicio in turno.Servicios)
+                        {
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>@servicio.Nombre</span>
+                                <span>
+                                    <span class="me-4"><i class="bi bi-clock"></i> @servicio.Tiempo min</span>
+                                    <strong>$@servicio.Costo</strong>
+                                </span>
+                            </li>
+                        }
+                        <li class="list-group-item d-flex justify-content-between bg-light">
+                            <span><strong>Total</strong></span>
+                            <span>
+                                <span class="me-4"><i class="bi bi-clock-history"></i> @turno.TiempoTotal min</span>
+                                <strong>$@turno.CostoTotal</strong>
+                            </span>
+                        </li>
+                    </ul>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <form method="post" asp-controller="Admin" asp-action="ConfirmAppointment" class="d-inline">
+                            <input type="hidden" name="usuario" value="@turno.Usuario" />
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="bi bi-check-circle"></i> Confirmar
+                            </button>
+                        </form>
+                        <form method="post" asp-controller="Admin" asp-action="CancelAppointment" class="d-inline">
+                            <input type="hidden" name="usuario" value="@turno.Usuario" />
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

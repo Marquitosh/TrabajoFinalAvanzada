@@ -1,0 +1,74 @@
+﻿@{
+    ViewData["Title"] = "Agendar Turno";
+    Layout = "_UserLayout";
+
+    // Leer los IDs del querystring
+    var ids = Context.Request.Query["ids"].ToList();
+
+    // Ejemplo: convertir IDs en servicios hardcodeados
+    var catalogoServicios = new List<(int Id, string Nombre, int Tiempo, decimal Costo)>
+    {
+        (1, "Cambio de aceite", 30, 2500),
+        (2, "Alineación y balanceo", 45, 4000),
+        (3, "Chequeo general", 60, 3500),
+        (4, "Cambio de pastillas de freno", 40, 3200)
+    };
+
+    var serviciosSeleccionados = catalogoServicios
+        .Where(s => ids.Contains(s.Id.ToString()))
+        .ToList();
+
+    var tiempoTotal = serviciosSeleccionados.Sum(s => s.Tiempo);
+    var costoTotal = serviciosSeleccionados.Sum(s => s.Costo);
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <h2 class="mb-4">Agendar Turno</h2>
+
+        @if (TempData["Message"] != null)
+        {
+            <div class="alert alert-info">@TempData["Message"]</div>
+        } else {
+            <div class="card">
+                <div class="card-body">
+                    <ul class="list-group mb-3">
+                        @foreach (var servicio in serviciosSeleccionados)
+                        {
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>@servicio.Nombre</span>
+                                <span>
+                                    <span class="me-4"><i class="bi bi-clock"></i> @servicio.Tiempo min</span>
+                                    <strong>$@servicio.Costo</strong>
+                                </span>
+                            </li>
+                        }
+                        <li class="list-group-item d-flex justify-content-between bg-light">
+                            <span><strong>Total</strong></span>
+                            <span>
+                                <span class="me-4"><i class="bi bi-clock-history"></i> @tiempoTotal min</span>
+                                <strong>$@costoTotal</strong>
+                            </span>
+                        </li>
+                    </ul>
+
+                    <form method="post" asp-controller="Usuarios" asp-action="ConfirmAppointment">
+                        <div class="mb-3">
+                            <label for="fechaTurno" class="form-label">Seleccionar día</label>
+                            <input type="date" class="form-control" id="fechaTurno" name="fechaTurno" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="horaTurno" class="form-label">Seleccionar hora</label>
+                            <input type="time" class="form-control" id="horaTurno" name="horaTurno" required />
+                        </div>
+
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Confirmar Turno
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
