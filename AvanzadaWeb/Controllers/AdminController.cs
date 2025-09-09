@@ -95,14 +95,10 @@ namespace AvanzadaWeb.Controllers
         {
             try
             {
-                //var userJson = HttpContext.Session.GetString("User");
-                //if (string.IsNullOrEmpty(userJson))
-                //    return RedirectToAction("Login", "Account");
+                var userJson = HttpContext.Session.GetString("User");
+                if (string.IsNullOrEmpty(userJson))
+                    return RedirectToAction("Login", "Account");
 
-                //var sessionUser = JsonSerializer.Deserialize<SessionUser>(userJson);
-                //var vehiculos = await _apiService.GetAsync<List<VehiculoViewModel>>($"vehiculos/Usuario/{sessionUser.IDUsuario}");
-
-                //return View(vehiculos);
                 return View();
             }
             catch (Exception ex)
@@ -129,6 +125,59 @@ namespace AvanzadaWeb.Controllers
             // 🚧 Acá va la lógica para cancelar el turno (ej: update en BD)
             TempData["Message"] = $"El turno de {usuario} fue cancelado.";
             return RedirectToAction("ManageAppointments");
+        }
+        public IActionResult ManageLog()
+        {
+            try
+            {
+                var userJson = HttpContext.Session.GetString("User");
+                if (string.IsNullOrEmpty(userJson))
+                    return RedirectToAction("Login", "Account");
+
+                var logs = new List<LogViewModel>
+{
+    new LogViewModel
+    {
+        Fecha = DateTime.Now.AddMinutes(-10),
+        Usuario = "admin",
+        Accion = "Inicio de sesión",
+        Descripcion = "El usuario admin inició sesión exitosamente.",
+        Nivel = "Info"
+    },
+    new LogViewModel
+    {
+        Fecha = DateTime.Now.AddHours(-1),
+        Usuario = "jlopez",
+        Accion = "Actualización de perfil",
+        Descripcion = "El usuario jlopez actualizó su dirección de correo.",
+        Nivel = "Info"
+    },
+    new LogViewModel
+    {
+        Fecha = DateTime.Now.AddDays(-1),
+        Usuario = "admin",
+        Accion = "Error al guardar turno",
+        Descripcion = "Excepción lanzada al intentar guardar un turno. Detalles: NullReferenceException.",
+        Nivel = "Error"
+    },
+    new LogViewModel
+    {
+        Fecha = DateTime.Now.AddMinutes(-30),
+        Usuario = "mgarcia",
+        Accion = "Intento de acceso no autorizado",
+        Descripcion = "El usuario mgarcia intentó acceder a una sección restringida.",
+        Nivel = "Warning"
+    }
+};
+
+                return View(logs);
+
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = "Error al cargar los vehículos: " + ex.Message;
+                return View(new List<VehiculoViewModel>());
+            }
         }
     }
 }
