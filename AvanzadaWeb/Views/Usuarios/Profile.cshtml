@@ -4,33 +4,330 @@
     Layout = "_UserLayout";
 }
 
+<!-- Mostrar mensajes de éxito -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle"></i>
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Mostrar errores generales -->
+@if (!ViewData.ModelState.IsValid && ViewData.ModelState[""] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle"></i>
+        @foreach (var error in ViewData.ModelState[""].Errors)
+        {
+            <div>@error.ErrorMessage</div>
+        }
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
 <div class="row">
-    <div class="col-md-6">
+    <span> Marco Tacchino </span>
+    <!-- Formulario de perfil -->
+    <div class="col-md-8">
         <div class="card">
-            <div class="card-header">
-                <h5>Información del Perfil</h5>
+            <div class="card-header bg-info text-white">
+                <h5><i class="bi bi-person-circle"></i> Mi Información Personal</h5>
             </div>
             <div class="card-body">
-                <form>
-                    <div class="mb-3">
-                        <label class="form-label">Nombre</label>
-                        <input type="text" class="form-control" value="@Model.Nombre" readonly>
+                <form asp-action="UpdateProfile" method="post" enctype="multipart/form-data" id="profileForm">
+                    <input asp-for="IDUsuario" type="hidden" />
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Nombre" class="form-label">Nombre *</label>
+                                <input asp-for="Nombre" type="text" class="form-control" maxlength="50" required
+                                       readonly id="nombreInput">
+                                <span asp-validation-for="Nombre" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Apellido" class="form-label">Apellido *</label>
+                                <input asp-for="Apellido" type="text" class="form-control" maxlength="50" required
+                                       readonly id="apellidoInput">
+                                <span asp-validation-for="Apellido" class="text-danger"></span>
+                            </div>
+                        </div>
                     </div>
+
                     <div class="mb-3">
-                        <label class="form-label">Apellido</label>
-                        <input type="text" class="form-control" value="@Model.Apellido" readonly>
+                        <label asp-for="Email" class="form-label">Email *</label>
+                        <input asp-for="Email" type="email" class="form-control" maxlength="100" required
+                               readonly id="emailInput">
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                        <div class="form-text">El email es único en el sistema</div>
                     </div>
+
                     <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" value="@Model.Email" readonly>
+                        <label asp-for="Telefono" class="form-label">Teléfono</label>
+                        <input asp-for="Telefono" type="tel" class="form-control" maxlength="20"
+                               placeholder="Ej: +54 11 1234-5678" readonly id="telefonoInput">
+                        <span asp-validation-for="Telefono" class="text-danger"></span>
+                        <div class="form-text">Formato: números, espacios, +, -, paréntesis</div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Teléfono</label>
-                        <input type="text" class="form-control" value="@Model.Telefono" readonly>
+
+                    <!-- Campo para subir foto -->
+                    <div class="mb-3" id="fotoSection" style="display: none;">
+                        <label class="form-label">Foto de Perfil</label>
+                        <input type="file" class="form-control" name="FotoFile" accept="image/*" id="fotoInput">
+                        <span class="text-danger">
+                            @if (ViewData.ModelState["FotoFile"] != null)
+                            {
+                                @foreach (var error in ViewData.ModelState["FotoFile"].Errors)
+                                {
+                                    <div>@error.ErrorMessage</div>
+                                }
+                            }
+                        </span>
+                        <div class="form-text">
+                            <i class="bi bi-info-circle"></i>
+                            Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 2MB
+                        </div>
+                        <div id="imagePreview" class="mt-2"></div>
                     </div>
-                    <button type="button" class="btn btn-primary">Editar Información</button>
+
+                    <!-- Botones de acción -->
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <button type="button" class="btn btn-primary" id="editBtn">
+                                <i class="bi bi-pencil"></i> Editar Información
+                            </button>
+                            <button type="submit" class="btn btn-success" id="saveBtn" style="display: none;">
+                                <i class="bi bi-check-circle"></i> Guardar Cambios
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="cancelBtn" style="display: none;">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </button>
+                        </div>
+                        <a asp-controller="Usuarios" asp-action="Dashboard" class="btn btn-outline-info">
+                            <i class="bi bi-house"></i> Panel Principal
+                        </a>
+                    </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Cambiar contraseña -->
+        <div class="card mt-4">
+            <div class="card-header bg-warning text-dark">
+                <h5><i class="bi bi-shield-lock"></i> Seguridad</h5>
+            </div>
+            <div class="card-body">
+                <h6>Cambiar Contraseña</h6>
+                <p class="text-muted">Para cambiar tu contraseña, contacta al administrador o usa la función de recuperación.</p>
+                <button type="button" class="btn btn-outline-warning btn-sm">
+                    <i class="bi bi-key"></i> Solicitar Cambio de Contraseña
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel lateral con foto e información -->
+    <div class="col-md-4">
+        <!-- Foto de perfil -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h6><i class="bi bi-camera"></i> Foto de Perfil</h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="profile-photo-container mb-3">
+                    @if (!string.IsNullOrEmpty(Model.Foto))
+                    {
+                        <img src="@Model.Foto" alt="Foto de perfil" class="img-fluid rounded-circle"
+                             style="width: 150px; height: 150px; object-fit: cover;" id="currentPhoto">
+                    }
+                    else
+                    {
+                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center"
+                             style="width: 150px; height: 150px; margin: 0 auto;" id="defaultPhoto">
+                            <i class="bi bi-person-fill text-muted" style="font-size: 4rem;"></i>
+                        </div>
+                    }
+                </div>
+                <p class="text-muted small">
+                    Tu foto aparecerá en el sistema y será visible para los administradores
+                </p>
+            </div>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="card mt-3">
+            <div class="card-header bg-success text-white">
+                <h6><i class="bi bi-info-circle"></i> Información de Cuenta</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <strong>ID Usuario:</strong> @Model.IDUsuario
+                    </li>
+                    <li class="mb-2">
+                        <strong>Nivel:</strong>
+                        <span class="badge bg-info">@Model.IDNivel</span>
+                    </li>
+                    <li class="mb-2">
+                        <strong>Estado:</strong>
+                        <span class="badge bg-success">Activo</span>
+                    </li>
+                    <li class="mb-2">
+                        <strong>Última actualización:</strong><br>
+                        <small class="text-muted">@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</small>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Tips -->
+        <div class="card mt-3">
+            <div class="card-header bg-light">
+                <h6><i class="bi bi-lightbulb"></i> Consejos</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled small">
+                    <li><i class="bi bi-check text-success"></i> Mantén tu teléfono actualizado para recibir notificaciones</li>
+                    <li><i class="bi bi-check text-success"></i> Una foto de perfil te ayuda a identificarte</li>
+                    <li><i class="bi bi-check text-success"></i> Revisa tu información regularmente</li>
+                </ul>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const editBtn = document.getElementById('editBtn');
+            const saveBtn = document.getElementById('saveBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+            const fotoSection = document.getElementById('fotoSection');
+            const fotoInput = document.getElementById('fotoInput');
+
+            const inputs = [
+                document.getElementById('nombreInput'),
+                document.getElementById('apellidoInput'),
+                document.getElementById('emailInput'),
+                document.getElementById('telefonoInput')
+            ];
+
+            // Guardar valores originales
+            let originalValues = {};
+
+            // Función para habilitar edición
+            editBtn.addEventListener('click', function() {
+                // Guardar valores originales
+                inputs.forEach(input => {
+                    originalValues[input.id] = input.value;
+                    input.removeAttribute('readonly');
+                    input.classList.add('border-warning');
+                });
+
+                // Mostrar/ocultar botones
+                editBtn.style.display = 'none';
+                saveBtn.style.display = 'inline-block';
+                cancelBtn.style.display = 'inline-block';
+                fotoSection.style.display = 'block';
+
+                // Focus en el primer campo
+                inputs[0].focus();
+            });
+
+            // Función para cancelar edición
+            cancelBtn.addEventListener('click', function() {
+                // Restaurar valores originales
+                inputs.forEach(input => {
+                    input.value = originalValues[input.id];
+                    input.setAttribute('readonly', 'readonly');
+                    input.classList.remove('border-warning');
+                });
+
+                // Mostrar/ocultar botones
+                editBtn.style.display = 'inline-block';
+                saveBtn.style.display = 'none';
+                cancelBtn.style.display = 'none';
+                fotoSection.style.display = 'none';
+
+                // Limpiar preview de imagen
+                document.getElementById('imagePreview').innerHTML = '';
+                fotoInput.value = '';
+            });
+
+            // Solo preview de imagen (sin validaciones)
+            fotoInput.addEventListener('change', function() {
+                const file = this.files[0];
+                const preview = document.getElementById('imagePreview');
+
+                if (file) {
+                    // Mostrar preview básico
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        preview.innerHTML = `
+                            <div class="text-center">
+                                <img src="${e.target.result}" alt="Preview"
+                                     class="img-thumbnail rounded-circle"
+                                     style="width: 100px; height: 100px; object-fit: cover;">
+                                <p class="small text-muted mt-1">Vista previa de la nueva foto</p>
+                            </div>
+                        `;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    preview.innerHTML = '';
+                }
+            });
+
+            // Auto-dismissed alerts después de 5 segundos
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    if (alert.querySelector('.btn-close')) {
+                        alert.querySelector('.btn-close').click();
+                    }
+                });
+            }, 5000);
+        });
+    </script>
+}
+
+<style>
+    .form-control:focus {
+        border-color: #17a2b8;
+        box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25);
+    }
+
+    .form-control.border-warning {
+        border-color: #ffc107 !important;
+    }
+
+    .profile-photo-container {
+        position: relative;
+    }
+
+    .card-header {
+        border-bottom: none;
+    }
+
+    .btn:focus {
+        box-shadow: none;
+    }
+
+    /* Estilos para campos con errores */
+    .input-validation-error {
+        border-color: #dc3545;
+    }
+
+    .field-validation-error {
+        color: #dc3545;
+        font-size: 0.875em;
+    }
+</style>

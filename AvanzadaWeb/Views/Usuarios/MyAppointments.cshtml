@@ -1,5 +1,79 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model IEnumerable<AvanzadaWeb.ViewModels.AppointmentViewModel>
+
 @{
+    ViewData["Title"] = "Mis Turnos";
+    Layout = "_UserLayout";
 }
+
+<div class="row">
+    <span> Daniel Vinet </span>
+    <div class="col-md-12">
+        <h2 class="mb-4">Mis Turnos</h2>
+
+        @if (TempData["Message"] != null)
+        {
+            <div class="alert alert-info">@TempData["Message"]</div>
+        }
+
+        @foreach (var turno in Model)
+        {
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-light">
+                    <strong>@turno.Usuario</strong>
+                    <span class="text-muted ms-2">
+                        <i class="bi bi-calendar-event"></i> @turno.Fecha.ToString("dd/MM/yyyy") - @turno.Hora
+                    </span>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group mb-3">
+                        @foreach (var servicio in turno.Servicios)
+                        {
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>@servicio.Nombre</span>
+                                <span>
+                                    <span class="me-4"><i class="bi bi-clock"></i> @servicio.Tiempo min</span>
+                                    <strong>$@servicio.Costo</strong>
+                                </span>
+                            </li>
+                        }
+                        <li class="list-group-item d-flex justify-content-between bg-light">
+                            <span><strong>Total</strong></span>
+                            <span>
+                                <span class="me-4"><i class="bi bi-clock-history"></i> @turno.TiempoTotal min</span>
+                                <strong>$@turno.CostoTotal</strong>
+                            </span>
+                        </li>
+                    </ul>
+
+                    <div class="d-flex justify-content-end">
+                        @* Mostrar estado en vez de botones *@
+                        @if (turno.Estado == "Pendiente")
+                        {
+                            <span class="badge bg-warning text-dark px-3 py-2">
+                                <i class="bi bi-hourglass-split"></i> Pendiente
+                            </span>
+                        }
+                        else if (turno.Estado == "Confirmado")
+                        {
+                            <span class="badge bg-success px-3 py-2">
+                                <i class="bi bi-check-circle"></i> Confirmado
+                            </span>
+                        }
+                        else if (turno.Estado == "Cancelado")
+                        {
+                            <span class="badge bg-danger px-3 py-2">
+                                <i class="bi bi-x-circle"></i> Cancelado
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary px-3 py-2">
+                                <i class="bi bi-question-circle"></i> Desconocido
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
