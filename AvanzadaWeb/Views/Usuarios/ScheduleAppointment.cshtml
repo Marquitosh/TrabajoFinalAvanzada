@@ -2,10 +2,8 @@
     ViewData["Title"] = "Agendar Turno";
     Layout = "_UserLayout";
 
-    // Leer los IDs del querystring
     var ids = Context.Request.Query["ids"].ToList();
 
-    // Ejemplo: convertir IDs en servicios hardcodeados
     var catalogoServicios = new List<(int Id, string Nombre, int Tiempo, decimal Costo)>
     {
         (1, "Cambio de aceite", 30, 2500),
@@ -20,6 +18,18 @@
 
     var tiempoTotal = serviciosSeleccionados.Sum(s => s.Tiempo);
     var costoTotal = serviciosSeleccionados.Sum(s => s.Costo);
+
+    var hoy = DateTime.Today.ToString("yyyy-MM-dd");
+
+    // Fechas bloqueadas hardcodeadas
+    var fechasBloqueadas = new List<string> {
+        DateTime.Today.AddDays(1).ToString("yyyy-MM-dd"),
+        DateTime.Today.AddDays(3).ToString("yyyy-MM-dd")
+    };
+
+    var horariosBloqueados = new List<string> {
+        "10:00", "13:15", "16:45"
+    };
 }
 
 <div class="row">
@@ -30,7 +40,9 @@
         @if (TempData["Message"] != null)
         {
             <div class="alert alert-info">@TempData["Message"]</div>
-        } else {
+        }
+        else
+        {
             <div class="card">
                 <div class="card-body">
                     <ul class="list-group mb-3">
@@ -54,13 +66,15 @@
                     </ul>
 
                     <form method="post" asp-controller="Usuarios" asp-action="ConfirmAppointment">
-                        <div class="mb-3">
-                            <label for="fechaTurno" class="form-label">Seleccionar día</label>
-                            <input type="date" class="form-control" id="fechaTurno" name="fechaTurno" required />
-                        </div>
-                        <div class="mb-3">
-                            <label for="horaTurno" class="form-label">Seleccionar hora</label>
-                            <input type="time" class="form-control" id="horaTurno" name="horaTurno" required />
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <label for="fechaTurno" class="form-label">Seleccionar día</label>
+                                <input type="date" class="form-control" id="fechaTurno" name="fechaTurno" min="@hoy" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="horaTurno" class="form-label">Seleccionar hora</label>
+                                <input type="time" class="form-control" id="horaTurno" name="horaTurno" step="900" required />
+                            </div>
                         </div>
 
                         <button type="submit" class="btn btn-success">
@@ -70,6 +84,41 @@
                 </div>
             </div>
         }
-
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        const fechasBloqueadas = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(fechasBloqueadas));
+        const horariosBloqueados = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(horariosBloqueados));
+
+        const fechaInput = document.getElementById("fechaTurno");
+        const horaInput = document.getElementById("horaTurno");
+
+        // Bloquear fechas
+        fechaInput.addEventListener("input", function () {
+            const seleccionada = this.value;
+            if (fechasBloqueadas.includes(seleccionada)) {
+                alert("La fecha seleccionada no está disponible. Por favor, elige otra.");
+                this.value = "";
+            }
+        });
+
+        // Validar hora: debe ser múltiplo de 15 y no estar bloqueada
+        horaInput.addEventListener("input", function () {
+            const hora = this.value;
+            const [h, m] = hora.split(":").map(Number);
+
+            if (![0, 15, 30, 45].includes(m)) {
+                alert("Solo se permiten horarios cada 15 minutos.");
+                this.value = "";
+                return;
+            }
+
+            if (horariosBloqueados.includes(hora)) {
+                alert("Ese horario no está disponible.");
+                this.value = "";
+            }
+        });
+    </script>
+}
