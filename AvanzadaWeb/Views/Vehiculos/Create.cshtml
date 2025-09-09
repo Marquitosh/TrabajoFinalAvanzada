@@ -1,0 +1,158 @@
+﻿@model AvanzadaWeb.ViewModels.VehiculoViewModel
+@{
+    ViewData["Title"] = "Registrar Nuevo Vehículo";
+    Layout = "_UserLayout";
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="bi bi-car-front-fill"></i> Registrar Nuevo Vehículo</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Marca" class="form-label">Marca *</label>
+                                <input asp-for="Marca" class="form-control" placeholder="Ej: Toyota" maxlength="50" required>
+                                <span asp-validation-for="Marca" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Modelo" class="form-label">Modelo *</label>
+                                <input asp-for="Modelo" class="form-control" placeholder="Ej: Corolla" maxlength="50" required>
+                                <span asp-validation-for="Modelo" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Year" class="form-label">Año *</label>
+                                <input asp-for="Year" class="form-control" type="number" min="1990" max="2030" placeholder="2023" required>
+                                <span asp-validation-for="Year" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Patente" class="form-label">Patente *</label>
+                                <input asp-for="Patente" class="form-control" placeholder="ABC123" maxlength="20" required style="text-transform: uppercase;">
+                                <span asp-validation-for="Patente" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="IDCombustible" class="form-label">Tipo de Combustible *</label>
+                        <select asp-for="IDCombustible" class="form-select" required>
+                            <option value="">Seleccionar tipo de combustible...</option>
+                            <option value="1">Nafta</option>
+                            <option value="2">Diesel</option>
+                            <option value="3">GNC</option>
+                            <option value="4">Híbrido</option>
+                            <option value="5">Eléctrico</option>
+                        </select>
+                        <span asp-validation-for="IDCombustible" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Observaciones" class="form-label">Observaciones</label>
+                        <textarea asp-for="Observaciones" class="form-control" rows="3"
+                                  placeholder="Información adicional sobre el vehículo (opcional)"></textarea>
+                        <span asp-validation-for="Observaciones" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver a Mis Vehículos
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Registrar Vehículo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de ayuda -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h6><i class="bi bi-info-circle"></i> Información</h6>
+            </div>
+            <div class="card-body">
+                <h6>Campos obligatorios</h6>
+                <ul class="list-unstyled small">
+                    <li><i class="bi bi-check text-success"></i> Marca del vehículo</li>
+                    <li><i class="bi bi-check text-success"></i> Modelo</li>
+                    <li><i class="bi bi-check text-success"></i> Año de fabricación</li>
+                    <li><i class="bi bi-check text-success"></i> Patente</li>
+                    <li><i class="bi bi-check text-success"></i> Tipo de combustible</li>
+                </ul>
+
+                <hr>
+
+                <h6>Consejos</h6>
+                <ul class="list-unstyled small">
+                    <li><i class="bi bi-lightbulb text-warning"></i> La patente se convertirá automáticamente a mayúsculas</li>
+                    <li><i class="bi bi-lightbulb text-warning"></i> Las observaciones son opcionales pero útiles</li>
+                    <li><i class="bi bi-lightbulb text-warning"></i> Toda la información se puede editar después</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header bg-success text-white">
+                <h6><i class="bi bi-star"></i> Después de registrar</h6>
+            </div>
+            <div class="card-body">
+                <p class="small">Una vez registrado tu vehículo podrás:</p>
+                <ul class="list-unstyled small">
+                    <li><i class="bi bi-calendar-plus text-success"></i> Solicitar turnos</li>
+                    <li><i class="bi bi-tools text-success"></i> Ver historial de servicios</li>
+                    <li><i class="bi bi-bell text-success"></i> Recibir recordatorios</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        // Convertir patente a mayúsculas automáticamente
+        document.querySelector('input[name="Patente"]').addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+
+        // Validar año
+        document.querySelector('input[name="Year"]').addEventListener('change', function(e) {
+            const currentYear = new Date().getFullYear();
+            const inputYear = parseInt(e.target.value);
+
+            if (inputYear > currentYear + 1) {
+                alert('El año no puede ser mayor al próximo año');
+                e.target.value = currentYear;
+            }
+        });
+    </script>
+}
+
+<style>
+    .form-control:focus, .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+
+    .card-header {
+        border-bottom: none;
+    }
+</style>
