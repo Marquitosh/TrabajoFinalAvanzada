@@ -5,6 +5,7 @@
 }
 
 <div class="row">
+    <span> Agustin Pierluigi </span>
     <div class="col-md-8">
         <div class="card">
             <div class="card-header bg-primary text-white">
@@ -62,7 +63,7 @@
                     <div class="mb-3">
                         <label asp-for="Observaciones" class="form-label">Observaciones</label>
                         <textarea asp-for="Observaciones" class="form-control" rows="3"
-                                  placeholder="Información adicional sobre el vehículo (opcional)"></textarea>
+                                  placeholder="Información adicional sobre el vehículo (opcional)" required="false"></textarea>
                         <span asp-validation-for="Observaciones" class="text-danger"></span>
                     </div>
 

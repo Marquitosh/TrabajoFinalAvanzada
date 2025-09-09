@@ -17,5 +17,6 @@
         // Helpers para no recalcular en la vista
         public int TiempoTotal => Servicios.Sum(s => s.Tiempo);
         public decimal CostoTotal => Servicios.Sum(s => s.Costo);
+        public string Estado { get; set; } = "";
     }
 }
