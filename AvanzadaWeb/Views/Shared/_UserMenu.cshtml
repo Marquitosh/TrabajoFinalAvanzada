@@ -27,8 +27,8 @@
     </a>
 
     <!-- Opciones solo para administradores -->
-    @if (isAdmin)
-    {
+    @* @if (isAdmin)
+    { *@
         <hr>
         <h6 class="px-3 text-muted">Administración</h6>
         <a class="nav-link" asp-controller="Admin" asp-action="ManageAppointments">
@@ -37,5 +37,5 @@
         <a class="nav-link" asp-controller="Admin" asp-action="ManageRoles">
             <i class="bi bi-people-fill"></i> Gestionar Roles
         </a>
-    }
+    @* } *@
 </nav>
