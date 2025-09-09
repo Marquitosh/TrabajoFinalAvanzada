@@ -1,5 +1,210 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model List<AvanzadaWeb.ViewModels.VehiculoViewModel>
 @{
+    ViewData["Title"] = "Mis Vehículos";
+    Layout = "_UserLayout";
+
+    // Obtener información del usuario de la sesión
+    var userJson = Context.Session.GetString("User");
+    var user = !string.IsNullOrEmpty(userJson) ?
+        System.Text.Json.JsonSerializer.Deserialize<AvanzadaWeb.Models.SessionUser>(userJson) : null;
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-car-front"></i> Mis Vehículos</h2>
+            <a asp-controller="Vehiculos" asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Registrar Nuevo Vehículo
+            </a>
+        </div>
+
+        <!-- Resumen de vehículos -->
+        <div class="alert alert-info">
+            <h5>¡Hola @user?.Nombre!</h5>
+            <p class="mb-0">Aquí puede gestionar todos sus vehículos registrados en el sistema. Tiene <strong>@(Model?.Count ?? 0)</strong> vehículo(s) registrado(s).</p>
+        </div>
+    </div>
+</div>
+
+@if (Model != null && Model.Any())
+{
+    <!-- Lista de Vehículos -->
+    <div class="row">
+        @foreach (var vehiculo in Model)
+        {
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-car-front-fill"></i> @vehiculo.Marca @vehiculo.Modelo
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="row mb-2">
+                                <div class="col-4"><strong>Patente:</strong></div>
+                                <div class="col-8">
+                                    <span class="badge bg-dark">@vehiculo.Patente</span>
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-4"><strong>Año:</strong></div>
+                                <div class="col-8">@vehiculo.Year</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-4"><strong>Combustible:</strong></div>
+                                <div class="col-8">
+                                    <span class="badge bg-info">@vehiculo.CombustibleDescripcion</span>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(vehiculo.Observaciones))
+                            {
+                                <div class="row mb-2">
+                                    <div class="col-12">
+                                        <strong>Observaciones:</strong>
+                                        <p class="text-muted small mt-1">@vehiculo.Observaciones</p>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between">
+                            <a asp-controller="Vehiculos" asp-action="Edit" asp-route-id="@vehiculo.IDVehiculo"
+                               class="btn btn-outline-warning btn-sm">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                            <button type="button" class="btn btn-outline-danger btn-sm"
+                                    onclick="confirmarEliminacion(@vehiculo.IDVehiculo, '@vehiculo.Marca @vehiculo.Modelo')">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Acciones Adicionales -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-tools"></i> Acciones Rápidas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <a asp-controller="Vehiculos" asp-action="Create" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-plus-circle"></i> Nuevo Vehículo
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a asp-controller="Turnos" asp-action="Create" class="btn btn-outline-success w-100">
+                                <i class="bi bi-calendar-plus"></i> Solicitar Turno
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a asp-controller="Usuarios" asp-action="Dashboard" class="btn btn-outline-info w-100">
+                                <i class="bi bi-house"></i> Panel Principal
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a asp-controller="Usuarios" asp-action="Profile" class="btn btn-outline-secondary w-100">
+                                <i class="bi bi-person"></i> Mi Perfil
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Estado vacío cuando no hay vehículos -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card text-center">
+                <div class="card-body py-5">
+                    <i class="bi bi-car-front display-1 text-muted"></i>
+                    <h3 class="mt-3">No tienes vehículos registrados</h3>
+                    <p class="text-muted">¡Comienza registrando tu primer vehículo para gestionar tus servicios de lubricentro!</p>
+                    <a asp-controller="Vehiculos" asp-action="Create" class="btn btn-primary btn-lg mt-3">
+                        <i class="bi bi-plus-circle"></i> Registrar mi primer vehículo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información adicional para nuevos usuarios -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5><i class="bi bi-info-circle"></i> ¿Por qué registrar mis vehículos?</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-check-circle text-success"></i> Gestión fácil de servicios</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Historial completo de mantenimientos</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Recordatorios de service</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Turnos más rápidos</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5><i class="bi bi-lightbulb"></i> Próximos Pasos</h5>
+                </div>
+                <div class="card-body">
+                    <ol>
+                        <li>Registra tu vehículo con todos los datos</li>
+                        <li>Solicita tu primer turno</li>
+                        <li>Disfruta de un servicio personalizado</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal de confirmación para eliminar -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar el vehículo <strong><span id="vehiculoNombre"></span></strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Esta acción no se puede deshacer y se perderá todo el historial asociado.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a id="confirmarEliminar" href="#" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Eliminar Vehículo
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmarEliminacion(idVehiculo, nombreVehiculo) {
+            document.getElementById('vehiculoNombre').textContent = nombreVehiculo;
+            document.getElementById('confirmarEliminar').href = '@Url.Action("Delete", "Vehiculos")/' + idVehiculo;
+
+            var modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            modal.show();
+        }
+    </script>
 }
