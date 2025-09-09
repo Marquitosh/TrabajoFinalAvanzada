@@ -1,7 +1,10 @@
-﻿using AvanzadaWeb.Models;
+﻿using AvanzadaAPI.Models;
+using AvanzadaWeb.Models;
 using AvanzadaWeb.Services;
 using AvanzadaWeb.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 namespace AvanzadaWeb.Controllers
@@ -35,40 +38,51 @@ namespace AvanzadaWeb.Controllers
             {
                 try
                 {
-                    // Obtener todos los usuarios para buscar por email
-                    var usuarios = await _apiService.GetAsync<List<UsuarioViewModel>>("usuarios");
-                    var usuario = usuarios.FirstOrDefault(u => u.Email == model.Email);
-
-                    if (usuario != null)
+                    // Usar el endpoint especializado de login
+                    var loginRequest = new
                     {
+                        Email = model.Email,
+                        Password = model.Password
+                    };
 
-                        // Crear objeto de sesión
-                        var sessionUser = new SessionUser
-                        {
-                            IDUsuario = usuario.IDUsuario,
-                            Email = usuario.Email,
-                            Nombre = usuario.Nombre,
-                            Apellido = usuario.Apellido,
-                            NivelUsuario = usuario.NivelDescripcion,
-                            Foto = usuario.Foto
-                        };
+                    var response = await _apiService.PostAsync<UsuarioViewModel>("usuarios/login", loginRequest);
 
-                        // Guardar en sesión
-                        HttpContext.Session.SetString("User", JsonSerializer.Serialize(sessionUser));
-
-                        return RedirectToAction("Dashboard", "Usuarios");
-                    }
-                    else
+                    // Crear objeto de sesión
+                    var sessionUser = new SessionUser
                     {
-                        ModelState.AddModelError("", "Usuario no encontrado");
-                    }
+                        IDUsuario = response.IDUsuario,
+                        Email = response.Email,
+                        Nombre = response.Nombre,
+                        Apellido = response.Apellido,
+                        NivelUsuario = response.NivelDescripcion,
+                        Foto = response.Foto
+                    };
+
+                    HttpContext.Session.SetString("User", JsonSerializer.Serialize(sessionUser));
+                    return RedirectToAction("Dashboard", "Usuarios");
                 }
                 catch (Exception ex)
                 {
-                    ModelState.AddModelError("", "Error al iniciar sesión: " + ex.Message);
+                    // Manejar errores específicos
+                    if (ex.Message.Contains("Usuario no encontrado") || ex.Message.Contains("Contraseña incorrecta"))
+                    {
+                        ModelState.AddModelError("", "Credenciales inválidas");
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", "Error al iniciar sesión: " + ex.Message);
+                    }
                 }
             }
             return View(model);
+        }
+
+        // Método para verificar contraseña
+        private bool VerifyPassword(string password, byte[] storedHash)
+        {
+            using var sha256 = SHA256.Create();
+            var passwordHash = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+            return passwordHash.SequenceEqual(storedHash);
         }
 
         // GET: Account/Logout

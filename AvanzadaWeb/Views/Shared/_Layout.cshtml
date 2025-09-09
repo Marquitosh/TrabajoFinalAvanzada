@@ -85,6 +85,15 @@
                     }
 
                     <ul class="navbar-nav">
+
+                        @* ATENCIÓN: Esto es para propósitos de prueba.
+                        Recuerda mover este enlace de nuevo dentro del bloque '@if (user != null)'
+                        antes de subir los cambios a GitHub, ya que la gestión de roles es solo para usuarios logueados.
+                        *@
+                        <li class="nav-item">
+                            <a class="nav-link text-white" asp-area="" asp-controller="Roles" asp-action="Index">Gestión de Roles</a>
+                        </li>
+
                         @if (user != null)
                         {
                             <li class="nav-item">
