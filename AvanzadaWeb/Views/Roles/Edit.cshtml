@@ -1,0 +1,28 @@
+@model AvanzadaWeb.Models.Rol
+
+@{
+    ViewData["Title"] = "Editar Rol";
+    Layout = "_UserLayout";
+}
+
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5><i class="bi bi-pencil-square"></i> Editar Rol</h5>
+            </div>
+            <div class="card-body">
+                <form asp-controller="Roles" asp-action="Edit" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    <div class="mb-3">
+                        <label asp-for="Nombre" class="form-label">Nombre del Rol</label>
+                        <input asp-for="Nombre" class="form-control" required />
+                        <span asp-validation-for="Nombre" class="text-danger"></span>
+                    </div>
+                    <button type="submit" class="btn btn-info">Actualizar</button>
+                    <a asp-controller="Roles" asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

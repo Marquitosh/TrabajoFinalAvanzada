@@ -1,4 +1,4 @@
-using AvanzadaWeb.Models;
+﻿using AvanzadaWeb.Models;
 using AvanzadaWeb.Services;
 using AvanzadaWeb.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -15,7 +15,7 @@ namespace AvanzadaWeb.Controllers
             _apiService = apiService;
         }
 
-        // Acciones de administraci�n (existentes)
+        // Acciones de administración (existentes)
         public async Task<IActionResult> Index()
         {
             var usuarios = await _apiService.GetAsync<List<UsuarioViewModel>>("usuarios");
@@ -102,7 +102,7 @@ namespace AvanzadaWeb.Controllers
             }
             catch (Exception ex)
             {
-                ViewBag.ErrorMessage = "Error al cargar los veh�culos: " + ex.Message;
+                ViewBag.ErrorMessage = "Error al cargar los vehículos: " + ex.Message;
                 return View(new List<VehiculoViewModel>());
             }
         }
@@ -130,6 +130,22 @@ namespace AvanzadaWeb.Controllers
         public IActionResult RequestService()
         {
             return View();
+        }
+
+        public IActionResult ScheduleAppointment(List<int> ids)
+        {
+            
+            return View();
+        }
+
+        // POST: /Admin/ConfirmAppointment
+        [HttpPost]
+        public IActionResult ConfirmAppointment()
+        {
+            // 🚧 Acá va la lógica para confirmar el turno (ej: update en BD)
+            TempData["Message"] = $"El turno fue solicitado exitosamente.";
+
+            return RedirectToAction("ScheduleAppointment");
         }
     }
 }

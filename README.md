@@ -11,7 +11,11 @@ docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=Avanzada@1234" -p 1433:1433 
 
 3) Configurar la base de datos
 
-Si el contenedor se creó correctamente, abrí SQL Server y ejecutá el script que está más abajo en este README.
+primero tenemos que tener instalado SQL server management studio.
+El la pestaña ponemos nombre de servidor: Localhost,1433.
+Autentificacion de sql server.
+Inicio de sesion: sa y contraseña: Avanzada@1234.
+Si el contenedor se creó correctamente,te dejo iniciar bien a SQL ya podes ejecutar el script que está más abajo en este README.
 Ese script ya tiene cargados algunos usuarios, tipos de combustible, etc., para que puedan probar las rutas.
 
 4) Ejecutar el proyecto AvanzadaDB
@@ -56,7 +60,7 @@ Solo tienen que llamarlo al inicio de su archivo, tal como se hace en el Dashboa
 
 Si algo no funciona, avisen por el grupo y les doy una mano.
 
-
+ESTE CODIGO LO TIRAN EN SQL server management studio
 
 CREATE DATABASE AvanzadaDB;
 GO
