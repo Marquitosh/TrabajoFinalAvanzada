@@ -1,5 +1,6 @@
 ﻿using AvanzadaAPI.Data;
 using AvanzadaAPI.Models;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
@@ -39,6 +40,49 @@ namespace AvanzadaAPI.Controllers
             }
 
             return usuario;
+        }
+
+        [HttpPost("login")]
+        public async Task<ActionResult<UsuarioViewModel>> Login([FromBody] LoginRequest request)
+        {
+            try
+            {
+                // Buscar usuario por email
+                var usuario = await _context.Usuarios
+                    .Include(u => u.NivelUsuario)
+                    .FirstOrDefaultAsync(u => u.Email == request.Email);
+
+                if (usuario == null)
+                {
+                    return Unauthorized(new { message = "Usuario no encontrado" });
+                }
+
+                // Verificar contraseña
+                using var sha256 = SHA256.Create();
+                var passwordBytes = Encoding.UTF8.GetBytes(request.Password);
+                var passwordHash = sha256.ComputeHash(passwordBytes);
+
+                if (!passwordHash.SequenceEqual(usuario.Contraseña))
+                {
+                    return Unauthorized(new { message = "Contraseña incorrecta" });
+                }
+
+                // Devolver usuario sin información sensible
+                return Ok(new UsuarioViewModel
+                {
+                    IDUsuario = usuario.IDUsuario,
+                    Email = usuario.Email,
+                    Telefono = usuario.Telefono,
+                    Nombre = usuario.Nombre,
+                    Apellido = usuario.Apellido,
+                    NivelDescripcion = usuario.NivelUsuario.Descripcion,
+                    Foto = usuario.Foto
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Error interno: {ex.Message}" });
+            }
         }
 
         // PUT: api/Usuarios/5
@@ -171,5 +215,21 @@ namespace AvanzadaAPI.Controllers
             public string NewPassword { get; set; }
         }
 
+        public class LoginRequest
+        {
+            public string Email { get; set; }
+            public string Password { get; set; }
+        }
+
+        public class UsuarioViewModel
+        {
+            public int IDUsuario { get; set; }
+            public string Email { get; set; }
+            public string Telefono { get; set; }
+            public string Nombre { get; set; }
+            public string Apellido { get; set; }
+            public string NivelDescripcion { get; set; }
+            public string Foto { get; set; }
+        }
     }
 }
