@@ -55,7 +55,7 @@ namespace AvanzadaWeb.Controllers
                         Nombre = response.Nombre,
                         Apellido = response.Apellido,
                         NivelUsuario = response.NivelDescripcion,
-                        Foto = response.Foto
+                        Foto = response.FotoBase64
                     };
 
                     HttpContext.Session.SetString("User", JsonSerializer.Serialize(sessionUser));
