@@ -69,19 +69,22 @@ USE AvanzadaDB;
 GO
 
 -- Tabla para niveles de usuario (con nueva columna URL para seguridad)
+
 CREATE TABLE NivelesUsuario (
     IDNivel INT PRIMARY KEY IDENTITY(1,1),
     Descripcion NVARCHAR(20) NOT NULL,
     URL NVARCHAR(100) NOT NULL -- Nueva columna para gestión por URL
 );
 
--- Tabla de estados para turnos (nueva tabla solicitada)
+-- Tabla de estados para turnos
+
 CREATE TABLE EstadosTurno (
     IDEstadoTurno INT PRIMARY KEY IDENTITY(1,1),
     Descripcion NVARCHAR(20) NOT NULL
 );
 
--- Tabla de usuarios (foto cambiada a VARBINARY(MAX))
+-- Tabla de usuarios
+
 CREATE TABLE Usuarios (
     IDUsuario INT PRIMARY KEY IDENTITY(1,1),
     Email NVARCHAR(100) UNIQUE NOT NULL,
@@ -94,7 +97,7 @@ CREATE TABLE Usuarios (
     FechaRegistro DATETIME DEFAULT GETDATE()
 );
 
--- Resto de las tablas (manteniendo estructura anterior)
+
 CREATE TABLE TiposCombustible (
     IDCombustible INT PRIMARY KEY IDENTITY(1,1),
     Descripcion NVARCHAR(50) NOT NULL
@@ -163,10 +166,5 @@ INSERT INTO Servicios (Nombre, Precio, TiempoEstimado, Descripcion) VALUES
 ('Alineación y balanceo', 4500.00, 60, 'Alineación y balanceo de ruedas'),
 ('Service completo', 12000.00, 120, 'Service completo de vehículo'),
 ('Cambio de pastillas de freno', 8000.00, 45, 'Cambio de pastillas y discos de freno');
-
--- Insertar un usuario administrador de ejemplo (contraseña: "admin123")
-INSERT INTO Usuarios (Email, Telefono, Nombre, Apellido, Contraseña, IDNivel, Foto)
-VALUES ('admin@taller.com', '1122334455', 'Admin', 'Sistema', 
-HASHBYTES('SHA2_256', 'admin123'), 2, '/images/admin.jpg');
 
 GO
