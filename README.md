@@ -68,32 +68,38 @@ GO
 USE AvanzadaDB;
 GO
 
--- Tabla para niveles de usuario
+-- Tabla para niveles de usuario (con nueva columna URL para seguridad)
 CREATE TABLE NivelesUsuario (
     IDNivel INT PRIMARY KEY IDENTITY(1,1),
+    Descripcion NVARCHAR(20) NOT NULL,
+    URL NVARCHAR(100) NOT NULL -- Nueva columna para gestión por URL
+);
+
+-- Tabla de estados para turnos (nueva tabla solicitada)
+CREATE TABLE EstadosTurno (
+    IDEstadoTurno INT PRIMARY KEY IDENTITY(1,1),
     Descripcion NVARCHAR(20) NOT NULL
 );
 
--- Tabla de usuarios
+-- Tabla de usuarios (foto cambiada a VARBINARY(MAX))
 CREATE TABLE Usuarios (
     IDUsuario INT PRIMARY KEY IDENTITY(1,1),
     Email NVARCHAR(100) UNIQUE NOT NULL,
     Telefono NVARCHAR(20),
     Nombre NVARCHAR(50) NOT NULL,
     Apellido NVARCHAR(50) NOT NULL,
-    Contraseña VARBINARY(256) NOT NULL, -- Almacenará el hash de la contraseña
+    Contraseña VARBINARY(256) NOT NULL,
     IDNivel INT FOREIGN KEY REFERENCES NivelesUsuario(IDNivel),
-    Foto NVARCHAR(255), -- Ruta de la imagen
+    Foto VARBINARY(MAX), -- Cambiado de NVARCHAR a VARBINARY(MAX) :cite[1]:cite[5]
     FechaRegistro DATETIME DEFAULT GETDATE()
 );
 
--- Tabla de tipos de combustible
+-- Resto de las tablas (manteniendo estructura anterior)
 CREATE TABLE TiposCombustible (
     IDCombustible INT PRIMARY KEY IDENTITY(1,1),
     Descripcion NVARCHAR(50) NOT NULL
 );
 
--- Tabla de vehículos
 CREATE TABLE Vehiculos (
     IDVehiculo INT PRIMARY KEY IDENTITY(1,1),
     Marca NVARCHAR(50) NOT NULL,
@@ -105,22 +111,14 @@ CREATE TABLE Vehiculos (
     IDUsuario INT FOREIGN KEY REFERENCES Usuarios(IDUsuario)
 );
 
--- Tabla de servicios
 CREATE TABLE Servicios (
     IDServicio INT PRIMARY KEY IDENTITY(1,1),
     Nombre NVARCHAR(100) NOT NULL,
     Precio DECIMAL(10,2) NOT NULL,
-    TiempoEstimado INT NOT NULL, -- En minutos
+    TiempoEstimado INT NOT NULL,
     Descripcion NVARCHAR(MAX)
 );
 
--- Tabla de estados de turno
-CREATE TABLE EstadosTurno (
-    IDEstadoTurno INT PRIMARY KEY IDENTITY(1,1),
-    Descripcion NVARCHAR(20) NOT NULL
-);
-
--- Tabla de turnos
 CREATE TABLE Turnos (
     IDTurno INT PRIMARY KEY IDENTITY(1,1),
     IDUsuario INT FOREIGN KEY REFERENCES Usuarios(IDUsuario),
@@ -131,7 +129,6 @@ CREATE TABLE Turnos (
     Observaciones NVARCHAR(MAX)
 );
 
--- Tabla de clientes (información adicional)
 CREATE TABLE Clientes (
     IDCliente INT PRIMARY KEY IDENTITY(1,1),
     IDUsuario INT FOREIGN KEY REFERENCES Usuarios(IDUsuario),
@@ -143,9 +140,9 @@ CREATE TABLE Clientes (
 );
 
 -- Insertar datos básicos
-INSERT INTO NivelesUsuario (Descripcion) VALUES 
-('Cliente'),
-('Administrador');
+INSERT INTO NivelesUsuario (Descripcion, URL) VALUES 
+('Cliente', '/cliente'),
+('Administrador', '/admin');
 
 INSERT INTO EstadosTurno (Descripcion) VALUES 
 ('Pendiente'),
