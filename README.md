@@ -73,7 +73,8 @@ GO
 CREATE TABLE NivelesUsuario (
     IDNivel INT PRIMARY KEY IDENTITY(1,1),
     Descripcion NVARCHAR(20) NOT NULL,
-    URL NVARCHAR(100) NOT NULL -- Nueva columna para gestión por URL
+    RolNombre VARCHAR(50) NOT NULL DEFAULT 'Cliente';
+    UrlDefault VARCHAR(100) NULL;
 );
 
 -- Tabla de estados para turnos
@@ -143,9 +144,17 @@ CREATE TABLE Clientes (
 );
 
 -- Insertar datos básicos
-INSERT INTO NivelesUsuario (Descripcion, URL) VALUES 
-('Cliente', '/cliente'),
-('Administrador', '/admin');
+UPDATE NivelesUsuario SET 
+    Descripcion = 'Cliente',
+    RolNombre = 'Cliente',
+    UrlDefault = '/Usuarios/Profile'
+WHERE IDNivel = 1;
+
+UPDATE NivelesUsuario SET 
+    Descripcion = 'Administrador', 
+    RolNombre = 'Admin',
+    UrlDefault = '/Admin/Dashboard'
+WHERE IDNivel = 2;
 
 INSERT INTO EstadosTurno (Descripcion) VALUES 
 ('Pendiente'),
