@@ -1,5 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Http
 @inject IHttpContextAccessor HttpContextAccessor
+
 @{
     var userJson = Context.Session.GetString("User");
     var isAdmin = false;
@@ -39,6 +40,6 @@
     </a>
         <a class="nav-link" asp-controller="Admin" asp-action="ManageLog">
         <i class="bi bi-wrench"></i> Revision de Logs
-        </a>
+    </a>
     @* } *@
 </nav>

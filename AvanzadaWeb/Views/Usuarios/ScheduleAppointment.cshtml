@@ -30,7 +30,117 @@
     var horariosBloqueados = new List<string> {
         "10:00", "13:15", "16:45"
     };
+
+    // Simulación de disponibilidad por día (en la realidad vendría de la BD)
+    var disponibilidadPorDia = new Dictionary<string, object>();
+    
+    // Generar disponibilidad simulada para los próximos 30 días
+    for (int i = 0; i < 30; i++) {
+        var fecha = DateTime.Today.AddDays(i).ToString("yyyy-MM-dd");
+        var random = new Random(fecha.GetHashCode()); // Seed consistente para cada fecha
+        
+        if (fechasBloqueadas.Contains(fecha)) {
+            // Días completamente bloqueados
+            disponibilidadPorDia[fecha] = new { 
+                disponibles = 0, 
+                total = 40, 
+                porcentaje = 0,
+                clase = "no-disponible"
+            };
+        } else {
+            // Generar disponibilidad aleatoria pero consistente
+            var totalHorarios = 40; // Total de horarios posibles (8:00-18:00, cada 15 min)
+            var ocupados = random.Next(0, totalHorarios + 1);
+            var disponibles = totalHorarios - ocupados;
+            var porcentaje = Math.Round((double)disponibles / totalHorarios * 100, 1);
+            
+            string clase;
+            if (porcentaje == 0) {
+                clase = "no-disponible";
+            } else if (porcentaje <= 50) {
+                clase = "poca-disponibilidad";
+            } else {
+                clase = "mucha-disponibilidad";
+            }
+            
+            disponibilidadPorDia[fecha] = new { 
+                disponibles = disponibles, 
+                total = totalHorarios, 
+                porcentaje = porcentaje,
+                clase = clase
+            };
+        }
+    }
 }
+
+<style>
+    .calendar-container {
+        position: relative;
+    }
+    
+    .date-input-wrapper {
+        position: relative;
+    }
+    
+    .availability-legend {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.9em;
+    }
+    
+    .legend-color {
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+    }
+    
+    .mucha-disponibilidad { background-color: #d4edda !important; }
+    .poca-disponibilidad { background-color: #fff3cd !important; }
+    .no-disponible { background-color: #f8d7da !important; }
+    
+    /* Estilos personalizados para el input date */
+    #fechaTurno {
+        position: relative;
+    }
+    
+    .availability-info {
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 0.9em;
+        display: none;
+    }
+    
+    .availability-info.show {
+        display: block;
+    }
+    
+    .availability-info.mucha-disponibilidad {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+    
+    .availability-info.poca-disponibilidad {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+    }
+    
+    .availability-info.no-disponible {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+</style>
 
 <div class="row">
     <span> Daniel Vinet </span>
@@ -65,19 +175,49 @@
                         </li>
                     </ul>
 
-                    <form method="post" asp-controller="Usuarios" asp-action="ConfirmAppointment">
+                    <!-- Leyenda de disponibilidad -->
+                    <div class="availability-legend">
+                        <div class="legend-item">
+                            <div class="legend-color mucha-disponibilidad"></div>
+                            <span>Alta disponibilidad (>50%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color poca-disponibilidad"></div>
+                            <span>Poca disponibilidad (1-50%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color no-disponible"></div>
+                            <span>No disponible</span>
+                        </div>
+                    </div>
+
+                    <form method="post" asp-controller="Usuarios" asp-action="ConfirmAppointment" id="appointmentForm">
                         <div class="row mb-3">
                             <div class="col-md-6 mb-3 mb-md-0">
                                 <label for="fechaTurno" class="form-label">Seleccionar día</label>
-                                <input type="date" class="form-control" id="fechaTurno" name="fechaTurno" min="@hoy" required />
+                                <div class="date-input-wrapper">
+                                    <input type="date" class="form-control" id="fechaTurno" name="fechaTurno" min="@hoy" required />
+                                    <div id="availabilityInfo" class="availability-info"></div>
+                                </div>
                             </div>
                             <div class="col-md-6">
                                 <label for="horaTurno" class="form-label">Seleccionar hora</label>
-                                <input type="time" class="form-control" id="horaTurno" name="horaTurno" step="900" required />
+                                <select class="form-select" id="horaTurno" name="horaTurno" required disabled>
+                                    <option value="">Selecciona primero una fecha</option>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Por favor selecciona una hora válida.
+                                </div>
                             </div>
                         </div>
 
-                        <button type="submit" class="btn btn-success">
+                        <!-- Campos ocultos para enviar los IDs de servicios -->
+                        @foreach (var id in ids)
+                        {
+                            <input type="hidden" name="serviciosIds" value="@id" />
+                        }
+
+                        <button type="submit" class="btn btn-success" id="btnConfirmar" disabled>
                             <i class="bi bi-check-circle"></i> Confirmar Turno
                         </button>
                     </form>
@@ -91,34 +231,258 @@
     <script>
         const fechasBloqueadas = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(fechasBloqueadas));
         const horariosBloqueados = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(horariosBloqueados));
+        const disponibilidadPorDia = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(disponibilidadPorDia));
 
         const fechaInput = document.getElementById("fechaTurno");
         const horaInput = document.getElementById("horaTurno");
+        const availabilityInfo = document.getElementById("availabilityInfo");
+        const btnConfirmar = document.getElementById("btnConfirmar");
 
-        // Bloquear fechas
-        fechaInput.addEventListener("input", function () {
-            const seleccionada = this.value;
-            if (fechasBloqueadas.includes(seleccionada)) {
-                alert("La fecha seleccionada no está disponible. Por favor, elige otra.");
-                this.value = "";
+        // Función para generar horarios cada 15 minutos
+        function generarHorarios() {
+            const horarios = [];
+            const horaInicio = 8; // 8:00 AM
+            const horaFin = 18; // 6:00 PM
+            
+            for (let hora = horaInicio; hora < horaFin; hora++) {
+                for (let minutos = 0; minutos < 60; minutos += 15) {
+                    const horaStr = hora.toString().padStart(2, '0');
+                    const minutosStr = minutos.toString().padStart(2, '0');
+                    const tiempo24h = `${horaStr}:${minutosStr}`;
+                    
+                    // Convertir a formato 12 horas para mostrar
+                    let horaDisplay = hora;
+                    let ampm = 'AM';
+                    
+                    if (hora === 0) {
+                        horaDisplay = 12;
+                    } else if (hora === 12) {
+                        ampm = 'PM';
+                    } else if (hora > 12) {
+                        horaDisplay = hora - 12;
+                        ampm = 'PM';
+                    }
+                    
+                    const tiempoDisplay = `${horaDisplay.toString().padStart(2, '0')}:${minutosStr} ${ampm}`;
+                    horarios.push({ valor: tiempo24h, display: tiempoDisplay });
+                }
             }
-        });
+            
+            return horarios;
+        }
 
-        // Validar hora: debe ser múltiplo de 15 y no estar bloqueada
-        horaInput.addEventListener("input", function () {
-            const hora = this.value;
-            const [h, m] = hora.split(":").map(Number);
-
-            if (![0, 15, 30, 45].includes(m)) {
-                alert("Solo se permiten horarios cada 15 minutos.");
-                this.value = "";
+        // Función para mostrar información de disponibilidad
+        function mostrarDisponibilidad(fecha) {
+            const disponibilidad = disponibilidadPorDia[fecha];
+            
+            if (!disponibilidad) {
+                availabilityInfo.classList.remove('show');
                 return;
             }
 
-            if (horariosBloqueados.includes(hora)) {
-                alert("Ese horario no está disponible.");
+            let mensaje = '';
+            let iconClass = '';
+            
+            if (disponibilidad.clase === 'mucha-disponibilidad') {
+                mensaje = `✅ Excelente disponibilidad: ${disponibilidad.disponibles} horarios disponibles (${disponibilidad.porcentaje}%)`;
+                iconClass = 'mucha-disponibilidad';
+            } else if (disponibilidad.clase === 'poca-disponibilidad') {
+                mensaje = `⚠️ Disponibilidad limitada: ${disponibilidad.disponibles} horarios disponibles (${disponibilidad.porcentaje}%)`;
+                iconClass = 'poca-disponibilidad';
+            } else {
+                mensaje = `❌ Sin disponibilidad: No hay horarios disponibles para este día`;
+                iconClass = 'no-disponible';
+            }
+
+            availabilityInfo.textContent = mensaje;
+            availabilityInfo.className = `availability-info show ${iconClass}`;
+        }
+
+        // Función para poblar horarios disponibles
+        function poblarHorarios(fecha) {
+            const disponibilidad = disponibilidadPorDia[fecha];
+            const fechaSeleccionada = new Date(fecha + 'T00:00:00');
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            
+            // Limpiar opciones previas
+            horaInput.innerHTML = '';
+            horaInput.disabled = true;
+            
+            if (!disponibilidad || disponibilidad.disponibles === 0) {
+                horaInput.innerHTML = '<option value="">No hay horarios disponibles</option>';
+                return;
+            }
+            
+            horaInput.innerHTML = '<option value="">Selecciona una hora</option>';
+            horaInput.disabled = false;
+            
+            const todosLosHorarios = generarHorarios();
+            const ahora = new Date();
+            const horaActual = ahora.getHours();
+            const minutosActuales = ahora.getMinutes();
+            
+            // Simular cuáles horarios están ocupados
+            const random = new Random(fecha);
+            const horariosOcupados = new Set();
+            const totalAOcupar = disponibilidad.total - disponibilidad.disponibles;
+            
+            // Generar horarios ocupados de manera consistente
+            const horariosDisponibles = [...todosLosHorarios];
+            for (let i = 0; i < totalAOcupar; i++) {
+                if (horariosDisponibles.length === 0) break;
+                const randomIndex = Math.floor(Math.random() * horariosDisponibles.length);
+                const horarioOcupado = horariosDisponibles.splice(randomIndex, 1)[0];
+                horariosOcupados.add(horarioOcupado.valor);
+            }
+            
+            // Agregar horarios bloqueados específicos
+            horariosBloqueados.forEach(horario => {
+                horariosOcupados.add(horario);
+            });
+            
+            todosLosHorarios.forEach(horario => {
+                const [hora, minutos] = horario.valor.split(':').map(Number);
+                let agregarHorario = true;
+                
+                // Verificar si está ocupado
+                if (horariosOcupados.has(horario.valor)) {
+                    agregarHorario = false;
+                }
+                
+                // Si es hoy, solo mostrar horarios futuros (con al menos 1 hora de anticipación)
+                if (fechaSeleccionada.getTime() === hoy.getTime()) {
+                    const horarioEnMinutos = hora * 60 + minutos;
+                    const tiempoActualEnMinutos = horaActual * 60 + minutosActuales;
+                    
+                    // Requiere al menos 60 minutos de anticipación
+                    if (horarioEnMinutos <= tiempoActualEnMinutos + 60) {
+                        agregarHorario = false;
+                    }
+                }
+                
+                if (agregarHorario) {
+                    const option = document.createElement('option');
+                    option.value = horario.valor;
+                    option.textContent = horario.display;
+                    horaInput.appendChild(option);
+                }
+            });
+            
+            validarFormulario();
+        }
+
+        // Función simple de generador de números pseudoaleatorios
+        function Random(seed) {
+            this.seed = seed.split('').reduce((a, b) => {
+                a = ((a << 5) - a) + b.charCodeAt(0);
+                return a & a;
+            }, 0);
+            
+            this.next = function() {
+                this.seed = (this.seed * 1103515245 + 12345) & 0x7fffffff;
+                return this.seed;
+            };
+            
+            this.nextFloat = function() {
+                return this.next() / 0x7fffffff;
+            };
+            
+            this.nextInt = function(max) {
+                return Math.floor(this.nextFloat() * max);
+            };
+        }
+
+        // Función para validar el formulario
+        function validarFormulario() {
+            const fechaSeleccionada = fechaInput.value !== '';
+            const horaSeleccionada = horaInput.value !== '';
+            
+            btnConfirmar.disabled = !(fechaSeleccionada && horaSeleccionada);
+        }
+
+        // Función para validar que la hora sea válida (cada 15 minutos)
+        function validarHorario(tiempo) {
+            if (!tiempo) return false;
+            
+            const [hora, minutos] = tiempo.split(':').map(Number);
+            
+            // Verificar que los minutos sean múltiplos de 15
+            if (minutos % 15 !== 0) {
+                return false;
+            }
+            
+            // Verificar que esté en el rango de horario de atención (8:00 - 18:00)
+            if (hora < 8 || hora >= 18) {
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Event listeners
+        fechaInput.addEventListener("change", function () {
+            const fechaSeleccionada = this.value;
+            
+            // Validar que la fecha no sea anterior a hoy
+            const fecha = new Date(fechaSeleccionada + 'T00:00:00');
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            
+            if (fecha < hoy) {
+                alert("No se puede seleccionar una fecha pasada.");
+                this.value = "";
+                availabilityInfo.classList.remove('show');
+                horaInput.disabled = true;
+                horaInput.innerHTML = '<option value="">Selecciona primero una fecha válida</option>';
+                validarFormulario();
+                return;
+            }
+            
+            // Mostrar información de disponibilidad
+            mostrarDisponibilidad(fechaSeleccionada);
+            
+            // Poblar horarios disponibles
+            poblarHorarios(fechaSeleccionada);
+        });
+
+        horaInput.addEventListener("change", function() {
+            // Validar que el horario seleccionado sea válido
+            if (this.value && !validarHorario(this.value)) {
+                alert("Por favor selecciona un horario válido (cada 15 minutos entre 8:00 AM y 6:00 PM)");
                 this.value = "";
             }
+            
+            validarFormulario();
         });
+
+        // Validación del formulario antes del envío
+        document.getElementById("appointmentForm").addEventListener("submit", function(e) {
+            const fecha = fechaInput.value;
+            const hora = horaInput.value;
+            
+            // Validaciones finales
+            if (!fecha || !hora) {
+                e.preventDefault();
+                alert("Por favor completa todos los campos.");
+                return;
+            }
+            
+            if (!validarHorario(hora)) {
+                e.preventDefault();
+                alert("El horario seleccionado no es válido.");
+                return;
+            }
+            
+            const disponibilidad = disponibilidadPorDia[fecha];
+            if (!disponibilidad || disponibilidad.disponibles === 0) {
+                e.preventDefault();
+                alert("La fecha seleccionada no tiene disponibilidad.");
+                return;
+            }
+        });
+
+        // Inicialización
+        validarFormulario();
     </script>
 }
