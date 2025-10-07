@@ -1,5 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Http
 @inject IHttpContextAccessor HttpContextAccessor
+
 @{
     var userJson = Context.Session.GetString("User");
     var isAdmin = false;
@@ -29,16 +30,16 @@
     <!-- Opciones solo para administradores -->
     @* @if (isAdmin)
     { *@
-        <hr>
-        <h6 class="px-3 text-muted">Administración</h6>
-        <a class="nav-link" asp-controller="Admin" asp-action="ManageAppointments">
-            <i class="bi bi-calendar-check"></i> Gestionar Turnos
-        </a>
-        <a class="nav-link" asp-controller="Roles" asp-action="Index">
-            <i class="bi bi-people-fill"></i> Gestionar Roles
-        </a>
-        <a class="nav-link" asp-controller="Admin" asp-action="ManageLog">
+    <hr>
+    <h6 class="px-3 text-muted">Administración</h6>
+    <a class="nav-link" asp-controller="Admin" asp-action="ManageAppointments">
+        <i class="bi bi-calendar-check"></i> Gestionar Turnos
+    </a>
+    <a class="nav-link" asp-controller="Roles" asp-action="Index">
+        <i class="bi bi-people-fill"></i> Gestionar Roles
+    </a>
+    <a class="nav-link" asp-controller="Admin" asp-action="ManageLog">
         <i class="bi bi-wrench"></i> Revision de Logs
-        </a>
+    </a>
     @* } *@
 </nav>

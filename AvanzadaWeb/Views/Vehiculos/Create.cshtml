@@ -17,14 +17,28 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label asp-for="Marca" class="form-label">Marca *</label>
-                                <input asp-for="Marca" class="form-control" placeholder="Ej: Toyota" maxlength="50" required>
+                                <select asp-for="Marca" class="form-select" id="marcaSelect" required>
+                                    <option value="">Seleccionar marca...</option>
+                                    <option value="Toyota">Toyota</option>
+                                    <option value="Volkswagen">Volkswagen</option>
+                                    <option value="Fiat">Fiat</option>
+                                    <option value="Peugeot">Peugeot</option>
+                                    <option value="Ford">Ford</option>
+                                    <option value="Renault">Renault</option>
+                                    <option value="Chevrolet">Chevrolet</option>
+                                    <option value="Citroën">Citroën</option>
+                                    <option value="Jeep">Jeep</option>
+                                    <option value="Nissan">Nissan</option>
+                                </select>
                                 <span asp-validation-for="Marca" class="text-danger"></span>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label asp-for="Modelo" class="form-label">Modelo *</label>
-                                <input asp-for="Modelo" class="form-control" placeholder="Ej: Corolla" maxlength="50" required>
+                                <select asp-for="Modelo" class="form-select" id="modeloSelect" required disabled>
+                                    <option value="">Primero seleccione una marca...</option>
+                                </select>
                                 <span asp-validation-for="Modelo" class="text-danger"></span>
                             </div>
                         </div>
@@ -41,8 +55,9 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label asp-for="Patente" class="form-label">Patente *</label>
-                                <input asp-for="Patente" class="form-control" placeholder="ABC123" maxlength="20" required style="text-transform: uppercase;">
+                                <input asp-for="Patente" class="form-control" placeholder="ABC123 o AB123CD" maxlength="7" required style="text-transform: uppercase;">
                                 <span asp-validation-for="Patente" class="text-danger"></span>
+                                <small class="form-text text-muted">Formato: ABC123 (viejo) o AB123CD (nuevo)</small>
                             </div>
                         </div>
                     </div>
@@ -63,7 +78,7 @@
                     <div class="mb-3">
                         <label asp-for="Observaciones" class="form-label">Observaciones</label>
                         <textarea asp-for="Observaciones" class="form-control" rows="3"
-                                  placeholder="Información adicional sobre el vehículo (opcional)" required="false"></textarea>
+                                  placeholder="Información adicional sobre el vehículo" required="false"></textarea>
                         <span asp-validation-for="Observaciones" class="text-danger"></span>
                     </div>
 
@@ -101,6 +116,8 @@
                 <h6>Consejos</h6>
                 <ul class="list-unstyled small">
                     <li><i class="bi bi-lightbulb text-warning"></i> La patente se convertirá automáticamente a mayúsculas</li>
+                    <li><i class="bi bi-lightbulb text-warning"></i> Patente vieja: ABC123 (3 letras, 3 números)</li>
+                    <li><i class="bi bi-lightbulb text-warning"></i> Patente nueva: AB123CD (2 letras, 3 números, 2 letras)</li>
                     <li><i class="bi bi-lightbulb text-warning"></i> Las observaciones son opcionales pero útiles</li>
                     <li><i class="bi bi-lightbulb text-warning"></i> Toda la información se puede editar después</li>
                 </ul>
@@ -129,9 +146,63 @@
     }
 
     <script>
+        // Diccionario de marcas y modelos
+        const vehiculosData = {
+            "Toyota": ["Hilux", "Yaris", "Corolla", "Corolla Cross", "Etios", "SW4", "RAV4", "Innova"],
+            "Volkswagen": ["Gol", "Gol Trend", "Amarok", "Polo", "Taos", "T-Cross", "Nivus", "Suran", "Fox", "Vento"],
+            "Fiat": ["Cronos", "Palio", "Uno", "Strada", "Fiorino", "Punto", "Siena", "Mobi"],
+            "Peugeot": ["208", "2008", "Partner", "308", "307", "408", "504", "405"],
+            "Ford": ["Ranger", "EcoSport", "Ka", "Falcon", "Fiesta", "Mondeo", "Focus", "Ka+"],
+            "Renault": ["Sandero", "Kangoo", "Logan", "Clio", "Scenic", "Fluence", "Stepway", "12"],
+            "Chevrolet": ["Corsa", "Classic", "Onix", "Cruze", "S10", "Tahoe", "Silverado", "Spark", "Meriva", "Captiva"],
+            "Citroën": ["C3", "C4 Cactus", "Berlingo", "Aircross", "C4", "C5", "Spacetourer", "Picasso"],
+            "Jeep": ["Renegade", "Compass", "Grand Cherokee", "Patriot", "Cherokee", "Wrangler", "Liberty", "Wagoneer"],
+            "Nissan": ["Frontier", "Kicks", "Versa", "Sentra", "X-Trail", "Patrol", "March", "Tiida"]
+        };
+
+        // Actualizar modelos cuando cambia la marca
+        document.getElementById('marcaSelect').addEventListener('change', function() {
+            const marca = this.value;
+            const modeloSelect = document.getElementById('modeloSelect');
+
+            // Limpiar opciones actuales
+            modeloSelect.innerHTML = '<option value="">Seleccionar modelo...</option>';
+
+            if (marca && vehiculosData[marca]) {
+                // Habilitar el select de modelos
+                modeloSelect.disabled = false;
+
+                // Agregar los modelos correspondientes
+                vehiculosData[marca].forEach(modelo => {
+                    const option = document.createElement('option');
+                    option.value = modelo;
+                    option.textContent = modelo;
+                    modeloSelect.appendChild(option);
+                });
+            } else {
+                modeloSelect.disabled = true;
+                modeloSelect.innerHTML = '<option value="">Primero seleccione una marca...</option>';
+            }
+        });
+
         // Convertir patente a mayúsculas automáticamente
-        document.querySelector('input[name="Patente"]').addEventListener('input', function(e) {
+        const patenteInput = document.querySelector('input[name="Patente"]');
+        patenteInput.addEventListener('input', function(e) {
             e.target.value = e.target.value.toUpperCase();
+        });
+
+        // Validar formato de patente argentina
+        patenteInput.addEventListener('blur', function(e) {
+            const patente = e.target.value.trim();
+
+            // Expresiones regulares para patentes argentinas
+            const formatoViejo = /^[A-Z]{3}\d{3}$/;  // ABC123
+            const formatoNuevo = /^[A-Z]{2}\d{3}[A-Z]{2}$/;  // AB123CD
+
+            if (patente && !formatoViejo.test(patente) && !formatoNuevo.test(patente)) {
+                alert('Formato de patente inválido.\nFormatos válidos:\n- ABC123 (formato viejo)\n- AB123CD (formato nuevo)');
+              //  e.target.focus();
+            }
         });
 
         // Validar año
@@ -142,6 +213,19 @@
             if (inputYear > currentYear + 1) {
                 alert('El año no puede ser mayor al próximo año');
                 e.target.value = currentYear;
+            }
+        });
+
+        // Validación adicional antes de enviar el formulario
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const patente = patenteInput.value.trim();
+            const formatoViejo = /^[A-Z]{3}\d{3}$/;
+            const formatoNuevo = /^[A-Z]{2}\d{3}[A-Z]{2}$/;
+
+            if (!formatoViejo.test(patente) && !formatoNuevo.test(patente)) {
+                e.preventDefault();
+                alert('Por favor, ingrese una patente válida:\n- ABC123 (formato viejo)\n- AB123CD (formato nuevo)');
+                patenteInput.focus();
             }
         });
     </script>
@@ -155,5 +239,10 @@
 
     .card-header {
         border-bottom: none;
+    }
+
+    .form-select:disabled {
+        background-color: #e9ecef;
+        cursor: not-allowed;
     }
 </style>
