@@ -49,16 +49,19 @@
         .user-info {
             display: flex;
             align-items: center;
-            color: white;
-            margin-right: 15px;
+            padding: 0.5rem 1rem;
         }
 
         .user-avatar {
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            margin-right: 8px;
             object-fit: cover;
+            margin-right: 0.5rem;
+            border: 2px solid #dee2e6;
+        }
+
+        object-fit: cover;
         }
     </style>
 </head>
@@ -92,11 +95,7 @@
                                 <div class="user-info">
                                     @if (!string.IsNullOrEmpty(user.Foto))
                                     {
-                                        <img src="@user.Foto" alt="Avatar" class="user-avatar">
-                                    }
-                                    else
-                                    {
-                                        <i class="bi bi-person-circle user-avatar"></i>
+                                        <img src="data:image/jpeg;base64,@user.Foto" alt="Avatar" class="user-avatar">
                                     }
                                     <span>Hola, @user.Nombre</span>
                                 </div>

@@ -1,4 +1,6 @@
-﻿using AvanzadaWeb.Services;
+﻿using AvanzadaAPI.Models;
+using AvanzadaWeb.Models;
+using AvanzadaWeb.Services;
 using AvanzadaWeb.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
@@ -35,55 +37,62 @@ namespace AvanzadaWeb.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(VehiculoViewModel vehiculo)
-        {
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    await _apiService.PostAsync<VehiculoViewModel>("vehiculos", vehiculo);
-                    TempData["Success"] = "Vehículo registrado exitosamente";
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (Exception ex)
-                {
-                    ModelState.AddModelError("", "Error al registrar el vehículo: " + ex.Message);
-                }
-            }
-            return View(vehiculo);
-        }
-
-        public async Task<IActionResult> Edit(int id)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(VehiculoViewModel model)
         {
             try
             {
-                var vehiculo = await _apiService.GetAsync<VehiculoViewModel>($"vehiculos/{id}");
-                return View(vehiculo);
+                Console.WriteLine("=== INICIO Create Vehiculo ===");
+
+                // REMOVER campos que no se envían en el formulario
+                ModelState.Remove("UsuarioNombre");
+                ModelState.Remove("CombustibleDescripcion");
+
+                if (!ModelState.IsValid)
+                {
+                    Console.WriteLine("ModelState no es válido:");
+                    foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        Console.WriteLine($" - {error.ErrorMessage}");
+                    }
+                    return View(model);
+                }
+
+                // Obtener el ID del usuario desde la sesión
+                var userJson = HttpContext.Session.GetString("User");
+                if (string.IsNullOrEmpty(userJson))
+                {
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var sessionUser = System.Text.Json.JsonSerializer.Deserialize<SessionUser>(userJson);
+
+                // Crear el objeto para enviar a la API
+                var vehiculoData = new
+                {
+                    IDUsuario = sessionUser.IDUsuario,
+                    Marca = model.Marca,
+                    Modelo = model.Modelo,
+                    Year = model.Year,
+                    Patente = model.Patente?.ToUpper(),
+                    IDCombustible = model.IDCombustible,
+                    Observaciones = model.Observaciones
+                };
+
+                Console.WriteLine($"Enviando vehículo a API: {System.Text.Json.JsonSerializer.Serialize(vehiculoData)}");
+
+                // Llamar a la API
+                var response = await _apiService.PostAsync<Vehiculo>("vehiculos", vehiculoData);
+
+                TempData["SuccessMessage"] = "Vehículo registrado correctamente";
+                return RedirectToAction("MyVehicles", "Usuarios");
             }
             catch (Exception ex)
             {
-                TempData["Error"] = "Error al cargar el vehículo: " + ex.Message;
-                return RedirectToAction(nameof(Index));
+                Console.WriteLine($"ERROR en Create Vehiculo: {ex.Message}");
+                TempData["ErrorMessage"] = "Error al registrar el vehículo: " + ex.Message;
+                return View(model);
             }
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Edit(int id, VehiculoViewModel vehiculo)
-        {
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    await _apiService.PutAsync<VehiculoViewModel>($"vehiculos/{id}", vehiculo);
-                    TempData["Success"] = "Vehículo actualizado exitosamente";
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (Exception ex)
-                {
-                    ModelState.AddModelError("", "Error al actualizar el vehículo: " + ex.Message);
-                }
-            }
-            return View(vehiculo);
         }
 
         public async Task<IActionResult> Delete(int id)
