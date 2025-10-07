@@ -10,6 +10,7 @@ namespace AvanzadaAPI.Models
         [Required]
         [MaxLength(20)]
         public string Descripcion { get; set; } = string.Empty;
+        public string URL { get; set; }
 
         public ICollection<Usuario>? Usuarios { get; set; }
     }

@@ -68,32 +68,42 @@ GO
 USE AvanzadaDB;
 GO
 
--- Tabla para niveles de usuario
+-- Tabla para niveles de usuario (con nueva columna URL para seguridad)
+
 CREATE TABLE NivelesUsuario (
     IDNivel INT PRIMARY KEY IDENTITY(1,1),
+    Descripcion NVARCHAR(20) NOT NULL,
+    RolNombre VARCHAR(50) NOT NULL DEFAULT 'Cliente';
+    UrlDefault VARCHAR(100) NULL;
+);
+
+-- Tabla de estados para turnos
+
+CREATE TABLE EstadosTurno (
+    IDEstadoTurno INT PRIMARY KEY IDENTITY(1,1),
     Descripcion NVARCHAR(20) NOT NULL
 );
 
 -- Tabla de usuarios
+
 CREATE TABLE Usuarios (
     IDUsuario INT PRIMARY KEY IDENTITY(1,1),
     Email NVARCHAR(100) UNIQUE NOT NULL,
     Telefono NVARCHAR(20),
     Nombre NVARCHAR(50) NOT NULL,
     Apellido NVARCHAR(50) NOT NULL,
-    Contraseña VARBINARY(256) NOT NULL, -- Almacenará el hash de la contraseña
+    Contraseña VARBINARY(256) NOT NULL,
     IDNivel INT FOREIGN KEY REFERENCES NivelesUsuario(IDNivel),
-    Foto NVARCHAR(255), -- Ruta de la imagen
+    Foto VARBINARY(MAX), -- Cambiado de NVARCHAR a VARBINARY(MAX) :cite[1]:cite[5]
     FechaRegistro DATETIME DEFAULT GETDATE()
 );
 
--- Tabla de tipos de combustible
+
 CREATE TABLE TiposCombustible (
     IDCombustible INT PRIMARY KEY IDENTITY(1,1),
     Descripcion NVARCHAR(50) NOT NULL
 );
 
--- Tabla de vehículos
 CREATE TABLE Vehiculos (
     IDVehiculo INT PRIMARY KEY IDENTITY(1,1),
     Marca NVARCHAR(50) NOT NULL,
@@ -105,22 +115,14 @@ CREATE TABLE Vehiculos (
     IDUsuario INT FOREIGN KEY REFERENCES Usuarios(IDUsuario)
 );
 
--- Tabla de servicios
 CREATE TABLE Servicios (
     IDServicio INT PRIMARY KEY IDENTITY(1,1),
     Nombre NVARCHAR(100) NOT NULL,
     Precio DECIMAL(10,2) NOT NULL,
-    TiempoEstimado INT NOT NULL, -- En minutos
+    TiempoEstimado INT NOT NULL,
     Descripcion NVARCHAR(MAX)
 );
 
--- Tabla de estados de turno
-CREATE TABLE EstadosTurno (
-    IDEstadoTurno INT PRIMARY KEY IDENTITY(1,1),
-    Descripcion NVARCHAR(20) NOT NULL
-);
-
--- Tabla de turnos
 CREATE TABLE Turnos (
     IDTurno INT PRIMARY KEY IDENTITY(1,1),
     IDUsuario INT FOREIGN KEY REFERENCES Usuarios(IDUsuario),
@@ -131,7 +133,6 @@ CREATE TABLE Turnos (
     Observaciones NVARCHAR(MAX)
 );
 
--- Tabla de clientes (información adicional)
 CREATE TABLE Clientes (
     IDCliente INT PRIMARY KEY IDENTITY(1,1),
     IDUsuario INT FOREIGN KEY REFERENCES Usuarios(IDUsuario),
@@ -143,9 +144,17 @@ CREATE TABLE Clientes (
 );
 
 -- Insertar datos básicos
-INSERT INTO NivelesUsuario (Descripcion) VALUES 
-('Cliente'),
-('Administrador');
+UPDATE NivelesUsuario SET 
+    Descripcion = 'Cliente',
+    RolNombre = 'Cliente',
+    UrlDefault = '/Usuarios/Profile'
+WHERE IDNivel = 1;
+
+UPDATE NivelesUsuario SET 
+    Descripcion = 'Administrador', 
+    RolNombre = 'Admin',
+    UrlDefault = '/Admin/Dashboard'
+WHERE IDNivel = 2;
 
 INSERT INTO EstadosTurno (Descripcion) VALUES 
 ('Pendiente'),
@@ -166,10 +175,5 @@ INSERT INTO Servicios (Nombre, Precio, TiempoEstimado, Descripcion) VALUES
 ('Alineación y balanceo', 4500.00, 60, 'Alineación y balanceo de ruedas'),
 ('Service completo', 12000.00, 120, 'Service completo de vehículo'),
 ('Cambio de pastillas de freno', 8000.00, 45, 'Cambio de pastillas y discos de freno');
-
--- Insertar un usuario administrador de ejemplo (contraseña: "admin123")
-INSERT INTO Usuarios (Email, Telefono, Nombre, Apellido, Contraseña, IDNivel, Foto)
-VALUES ('admin@taller.com', '1122334455', 'Admin', 'Sistema', 
-HASHBYTES('SHA2_256', 'admin123'), 2, '/images/admin.jpg');
 
 GO
