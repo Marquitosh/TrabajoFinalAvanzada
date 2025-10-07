@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using UsuarioLoginDto = AvanzadaWeb.Models.UsuarioLoginDto;
 
 namespace AvanzadaWeb.Controllers
 {
@@ -38,40 +39,35 @@ namespace AvanzadaWeb.Controllers
             {
                 try
                 {
-                    // Usar el endpoint especializado de login
                     var loginRequest = new
                     {
                         Email = model.Email,
                         Password = model.Password
                     };
 
-                    var response = await _apiService.PostAsync<UsuarioViewModel>("usuarios/login", loginRequest);
+                    var response = await _apiService.PostAsync<UsuarioLoginDto>("usuarios/login", loginRequest);
 
-                    // Crear objeto de sesión
                     var sessionUser = new SessionUser
                     {
                         IDUsuario = response.IDUsuario,
                         Email = response.Email,
                         Nombre = response.Nombre,
                         Apellido = response.Apellido,
-                        NivelUsuario = response.NivelDescripcion,
-                        Foto = response.FotoBase64
+                        RolNombre = response.RolNombre ?? "Cliente",
+                        UrlDefault = response.RolNombre == "Admin" ? "/Usuarios/Dashboard" : "/Usuarios/Profile",
+                        Foto = response.Foto != null ? Convert.ToBase64String(response.Foto) : null
                     };
 
-                    HttpContext.Session.SetString("User", JsonSerializer.Serialize(sessionUser));
-                    return RedirectToAction("Dashboard", "Usuarios");
+                    HttpContext.Session.SetString("User", System.Text.Json.JsonSerializer.Serialize(sessionUser));
+
+                    TempData["SuccessMessage"] = $"Bienvenido {response.Nombre} {response.Apellido}";
+
+                    return Redirect(sessionUser.UrlDefault);
                 }
                 catch (Exception ex)
                 {
-                    // Manejar errores específicos
-                    if (ex.Message.Contains("Usuario no encontrado") || ex.Message.Contains("Contraseña incorrecta"))
-                    {
-                        ModelState.AddModelError("", "Credenciales inválidas");
-                    }
-                    else
-                    {
-                        ModelState.AddModelError("", "Error al iniciar sesión: " + ex.Message);
-                    }
+                    ModelState.AddModelError("", "Credenciales inválidas. Por favor, intente nuevamente.");
+                    return View(model);
                 }
             }
             return View(model);

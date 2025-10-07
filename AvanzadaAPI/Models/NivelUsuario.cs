@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace AvanzadaAPI.Models
 {
@@ -8,10 +9,17 @@ namespace AvanzadaAPI.Models
         public int IDNivel { get; set; }
 
         [Required]
-        [MaxLength(20)]
+        [MaxLength(50)]
         public string Descripcion { get; set; } = string.Empty;
-        public string URL { get; set; }
 
+        [Required]
+        [MaxLength(50)]
+        public string RolNombre { get; set; } = string.Empty;
+
+        [MaxLength(100)]
+        public string? UrlDefault { get; set; }
+
+        [JsonIgnore]
         public ICollection<Usuario>? Usuarios { get; set; }
     }
 }

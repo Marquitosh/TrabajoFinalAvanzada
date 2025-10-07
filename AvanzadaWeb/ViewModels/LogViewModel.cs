@@ -7,7 +7,8 @@ namespace AvanzadaWeb.ViewModels
         public string Usuario { get; set; }
         public string Accion { get; set; }
         public string Descripcion { get; set; }
-        public string Nivel { get; set; } // Info, Warning, Error
+        public string Nivel { get; set; }
+        public string? IPAddress { get; set; }
     }
 
 }

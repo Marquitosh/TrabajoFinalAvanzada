@@ -1,3 +1,4 @@
+using AvanzadaWeb.Filters;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AvanzadaWeb.Controllers
@@ -6,10 +7,15 @@ namespace AvanzadaWeb.Controllers
     {
         public IActionResult Index()
         {
-            return RedirectToAction("Login", "Account");
+            return View();
         }
 
-        public IActionResult Privacy()
+        [AuthorizeRole("Cliente", "Admin")]
+        public IActionResult Dashboard()
+        {
+            return View();
+        }
+        public IActionResult AccessDenied()
         {
             return View();
         }

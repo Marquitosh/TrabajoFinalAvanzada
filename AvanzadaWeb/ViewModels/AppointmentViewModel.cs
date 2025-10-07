@@ -2,21 +2,20 @@
 {
     public class AppointmentServiceViewModel
     {
-        public string Nombre { get; set; } = "";
+        public string Nombre { get; set; } = string.Empty;
         public int Tiempo { get; set; }
         public decimal Costo { get; set; }
     }
 
     public class AppointmentViewModel
     {
-        public string Usuario { get; set; } = "";
+        public int IDTurno { get; set; }
+        public string Usuario { get; set; } = string.Empty;
+        public string Vehiculo { get; set; } = string.Empty;
         public DateTime Fecha { get; set; }
-        public string Hora { get; set; } = "";
+        public string Hora { get; set; } = string.Empty;
+        public string Estado { get; set; } = string.Empty;
         public List<AppointmentServiceViewModel> Servicios { get; set; } = new();
-
-        // Helpers para no recalcular en la vista
-        public int TiempoTotal => Servicios.Sum(s => s.Tiempo);
-        public decimal CostoTotal => Servicios.Sum(s => s.Costo);
-        public string Estado { get; set; } = "";
+        public string? Observaciones { get; set; }
     }
 }

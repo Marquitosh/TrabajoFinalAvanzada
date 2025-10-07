@@ -1,8 +1,170 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Inicio - Taller Mecánico Lubricenter";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container-fluid px-0">
+    <span>Marco Tacchino</span>
+    <div class="bg-primary text-white py-5">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="display-4 fw-bold mb-3">
+                        <i class="bi bi-tools"></i> Taller Mecánico Lubricenter
+                    </h1>
+                    <p class="lead mb-4">
+                        Tu confianza, nuestro compromiso. Servicios de mecánica automotriz
+                        con la más alta calidad y profesionalismo.
+                    </p>
+                    <div class="d-flex flex-wrap gap-3">
+                        @if (Context.Session.GetString("User") == null)
+                        {
+                            <a href="/Account/Login" class="btn btn-light btn-lg">
+                                <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+                            </a>
+                            <a href="/Account/Register" class="btn btn-outline-light btn-lg">
+                                <i class="bi bi-person-plus"></i> Registrarse
+                            </a>
+                        }
+                        else
+                        {
+                            var userJson = Context.Session.GetString("User");
+                            var user = System.Text.Json.JsonSerializer.Deserialize<SessionUser>(userJson);
+                            <a href="/Usuarios/Profile" class="btn btn-light btn-lg">
+                                <i class="bi bi-person-circle"></i> Mi Perfil
+                            </a>
+                            <a href="/Account/Logout" class="btn btn-outline-light btn-lg">
+                                <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                            </a>
+                        }
+                    </div>
+                </div>
+                <div class="col-lg-4 text-center">
+                    <div class="bg-white bg-opacity-10 rounded-3 p-4">
+                        <i class="bi bi-car-front display-1 text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container py-5">
+        <div class="row text-center mb-5">
+            <div class="col">
+                <h2 class="fw-bold text-primary">Nuestros Servicios</h2>
+                <p class="text-muted">Calidad y confianza en cada reparación</p>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                            <i class="bi bi-gear-fill text-primary fs-3"></i>
+                        </div>
+                        <h5 class="card-title fw-bold">Mantenimiento</h5>
+                        <p class="card-text text-muted">
+                            Cambio de aceite, filtros y revisión general para mantener tu vehículo en óptimas condiciones.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                            <i class="bi bi-tools text-success fs-3"></i>
+                        </div>
+                        <h5 class="card-title fw-bold">Reparaciones</h5>
+                        <p class="card-text text-muted">
+                            Diagnóstico y reparación de problemas mecánicos y eléctricos con garantía.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                            <i class="bi bi-calendar-check text-warning fs-3"></i>
+                        </div>
+                        <h5 class="card-title fw-bold">Turnos Online</h5>
+                        <p class="card-text text-muted">
+                            Agenda tu servicio de forma rápida y sencilla desde nuestra plataforma web.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA Section -->
+    @if (Context.Session.GetString("User") == null)
+    {
+        <div class="container py-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center">
+                    <h3 class="fw-bold mb-3">¿Listo para comenzar?</h3>
+                    <p class="text-muted mb-4">
+                        Únete a nuestra comunidad de clientes satisfechos y disfruta de los mejores servicios mecánicos.
+                    </p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="/Account/Register" class="btn btn-primary btn-lg">
+                            <i class="bi bi-person-plus"></i> Crear Cuenta
+                        </a>
+                        <a href="/Account/Login" class="btn btn-outline-primary btn-lg">
+                            <i class="bi bi-box-arrow-in-right"></i> Ingresar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="container py-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center">
+                    @{
+                        var userJson = Context.Session.GetString("User");
+                        var user = System.Text.Json.JsonSerializer.Deserialize<SessionUser>(userJson);
+                    }
+                    <h3 class="fw-bold mb-3">¡Bienvenido de vuelta, @user.Nombre!</h3>
+                    <p class="text-muted mb-4">
+                        Nos alegra verte de nuevo. ¿En qué podemos ayudarte hoy?
+                    </p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="/Usuarios/Profile" class="btn btn-primary btn-lg">
+                            <i class="bi bi-person-circle"></i> Mi Perfil
+                        </a>
+                        @if (user.RolNombre == "Admin")
+                        {
+                            <a href="/Admin/Dashboard" class="btn btn-success btn-lg">
+                                <i class="bi bi-speedometer2"></i> Panel Admin
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 </div>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+<style>
+    .card {
+        transition: transform 0.2s ease-in-out;
+    }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+    .bg-primary {
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
+    }
+</style>

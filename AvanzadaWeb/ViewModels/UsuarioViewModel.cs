@@ -7,7 +7,6 @@ namespace AvanzadaWeb.ViewModels
     {
         public int IDUsuario { get; set; }
 
-        // Quitamos NivelDescripcion como requerido ya que no se usa en la edición
         public string? NivelDescripcion { get; set; }
 
         [Required(ErrorMessage = "El nombre es obligatorio")]
@@ -42,22 +41,17 @@ namespace AvanzadaWeb.ViewModels
 
         [JsonIgnore]
         public string? Foto => FotoBase64;
-
-        // Propiedades de solo lectura para mostrar información
         [Display(Name = "Nombre Completo")]
         public string NombreCompleto => $"{Nombre} {Apellido}";
 
-        // Clase para validaciones personalizadas adicionales
         public class ValidacionPersonalizada : ValidationAttribute
         {
             protected override ValidationResult IsValid(object value, ValidationContext validationContext)
             {
-                // Aquí puedes implementar validaciones más complejas si es necesario
                 return ValidationResult.Success;
             }
         }
 
-        // Clase para manejar la respuesta de actualización
         public class UpdateProfileResponse
         {
             public bool Success { get; set; }

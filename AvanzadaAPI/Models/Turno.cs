@@ -21,7 +21,12 @@ namespace AvanzadaAPI.Models
         public Servicio? Servicio { get; set; }
 
         [Required]
-        public DateTime FechaHora { get; set; }
+        public DateTime Fecha { get; set; }
+
+        [Required]
+        public TimeSpan Hora { get; set; }
+
+        public DateTime FechaCreacion { get; set; } = DateTime.Now;
 
         [ForeignKey("EstadoTurno")]
         public int IDEstadoTurno { get; set; }

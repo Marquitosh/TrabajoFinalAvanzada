@@ -1,66 +1,118 @@
-﻿@model IEnumerable<AvanzadaWeb.ViewModels.AppointmentViewModel>
-
-@{
-    ViewData["Title"] = "Gestionar Turnos";
-    Layout = "_UserLayout";
+﻿@{
+    ViewData["Title"] = "Gestión de Turnos";
 }
 
-<div class="row">
-    <span> Daniel Vinet </span>
-    <div class="col-md-12">
-        <h2 class="mb-4">Gestionar Turnos</h2>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-calendar-check"></i> Gestión de Turnos</h2>
+    </div>
 
-        @if (TempData["Message"] != null)
-        {
-            <div class="alert alert-info">@TempData["Message"]</div>
-        }
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Message"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
-        @foreach (var turno in Model)
-        {
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header bg-light">
-                    <strong>@turno.Usuario</strong>
-                    <span class="text-muted ms-2">
-                        <i class="bi bi-calendar-event"></i> @turno.Fecha.ToString("dd/MM/yyyy") - @turno.Hora
-                    </span>
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Lista de Turnos</h5>
                 </div>
                 <div class="card-body">
-                    <ul class="list-group mb-3">
-                        @foreach (var servicio in turno.Servicios)
-                        {
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>@servicio.Nombre</span>
-                                <span>
-                                    <span class="me-4"><i class="bi bi-clock"></i> @servicio.Tiempo min</span>
-                                    <strong>$@servicio.Costo</strong>
-                                </span>
-                            </li>
-                        }
-                        <li class="list-group-item d-flex justify-content-between bg-light">
-                            <span><strong>Total</strong></span>
-                            <span>
-                                <span class="me-4"><i class="bi bi-clock-history"></i> @turno.TiempoTotal min</span>
-                                <strong>$@turno.CostoTotal</strong>
-                            </span>
-                        </li>
-                    </ul>
-
-                    <div class="d-flex justify-content-end gap-2">
-                        <form method="post" asp-controller="Admin" asp-action="ConfirmAppointment" class="d-inline">
-                            <input type="hidden" name="usuario" value="@turno.Usuario" />
-                            <button type="submit" class="btn btn-success btn-sm">
-                                <i class="bi bi-check-circle"></i> Confirmar
-                            </button>
-                        </form>
-                        <form method="post" asp-controller="Admin" asp-action="CancelAppointment" class="d-inline">
-                            <input type="hidden" name="usuario" value="@turno.Usuario" />
-                            <button type="submit" class="btn btn-danger btn-sm">
-                                <i class="bi bi-x-circle"></i> Cancelar
-                            </button>
-                        </form>
-                    </div>
+                    @if (Model.Count > 0)
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Usuario</th>
+                                        <th>Vehículo</th>
+                                        <th>Fecha</th>
+                                        <th>Hora</th>
+                                        <th>Servicio</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var turno in Model)
+                                    {
+                                        <tr>
+                                            <td>@turno.IDTurno</td>
+                                            <td>@turno.Usuario</td>
+                                            <td>@turno.Vehiculo</td>
+                                            <td>@turno.Fecha.ToString("dd/MM/yyyy")</td>
+                                            <td>@turno.Hora</td>
+                                            <td>
+                                                @foreach (var servicio in turno.Servicios)
+                                                {
+                                                    <span class="badge bg-info">@servicio.Nombre</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge @GetEstadoBadgeClass(turno.Estado)">@turno.Estado</span>
+                                            </td>
+                                            <td>
+                                                @if (turno.Estado == "Pendiente")
+                                                {
+                                                    <form method="post" action="@Url.Action("ConfirmAppointment")" class="d-inline">
+                                                        <input type="hidden" name="id" value="@turno.IDTurno" />
+                                                        <button type="submit" class="btn btn-success btn-sm">
+                                                            <i class="bi bi-check-circle"></i> Confirmar
+                                                        </button>
+                                                    </form>
+                                                    <form method="post" action="@Url.Action("CancelAppointment")" class="d-inline">
+                                                        <input type="hidden" name="id" value="@turno.IDTurno" />
+                                                        <button type="submit" class="btn btn-danger btn-sm">
+                                                            <i class="bi bi-x-circle"></i> Cancelar
+                                                        </button>
+                                                    </form>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Sin acciones</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> No hay turnos registrados.
+                        </div>
+                    }
                 </div>
             </div>
-        }
+        </div>
     </div>
 </div>
+
+@functions {
+    public string GetEstadoBadgeClass(string estado)
+    {
+        return estado switch
+        {
+            "Pendiente" => "bg-warning",
+            "Confirmado" => "bg-success",
+            "Cancelado" => "bg-danger",
+            "Completado" => "bg-info",
+            _ => "bg-secondary"
+        };
+    }
+}

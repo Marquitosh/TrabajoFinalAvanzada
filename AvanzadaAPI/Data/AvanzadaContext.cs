@@ -18,11 +18,9 @@ namespace AvanzadaAPI.Data
         public DbSet<EstadoTurno> EstadosTurno { get; set; }
         public DbSet<Turno> Turnos { get; set; }
         public DbSet<Cliente> Clientes { get; set; }
-
+        public DbSet<Log> Logs { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Configuraciones adicionales si son necesarias
-            // Por ejemplo, semillas de datos iniciales
         }
     }
 }

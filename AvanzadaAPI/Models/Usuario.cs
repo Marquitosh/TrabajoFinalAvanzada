@@ -35,7 +35,7 @@ namespace AvanzadaAPI.Models
         public string ContraseñaString { get; set; } = string.Empty;
 
         [ForeignKey("NivelUsuario")]
-        public int IDNivel { get; set; } = 1; // Valor por defecto: Cliente
+        public int IDNivel { get; set; } = 1;
 
         public NivelUsuario? NivelUsuario { get; set; }
 
@@ -51,5 +51,7 @@ namespace AvanzadaAPI.Models
 
         [JsonIgnore]
         public Cliente? Cliente { get; set; }
+
+        public string NombreCompleto => $"{Nombre} {Apellido}";
     }
 }
