@@ -68,112 +68,33 @@ GO
 USE AvanzadaDB;
 GO
 
--- Tabla para niveles de usuario (con nueva columna URL para seguridad)
-
-CREATE TABLE NivelesUsuario (
-    IDNivel INT PRIMARY KEY IDENTITY(1,1),
-    Descripcion NVARCHAR(20) NOT NULL,
-    RolNombre VARCHAR(50) NOT NULL DEFAULT 'Cliente';
-    UrlDefault VARCHAR(100) NULL;
-);
-
--- Tabla de estados para turnos
-
-CREATE TABLE EstadosTurno (
-    IDEstadoTurno INT PRIMARY KEY IDENTITY(1,1),
-    Descripcion NVARCHAR(20) NOT NULL
-);
-
--- Tabla de usuarios
-
-CREATE TABLE Usuarios (
-    IDUsuario INT PRIMARY KEY IDENTITY(1,1),
-    Email NVARCHAR(100) UNIQUE NOT NULL,
-    Telefono NVARCHAR(20),
-    Nombre NVARCHAR(50) NOT NULL,
-    Apellido NVARCHAR(50) NOT NULL,
-    Contraseña VARBINARY(256) NOT NULL,
-    IDNivel INT FOREIGN KEY REFERENCES NivelesUsuario(IDNivel),
-    Foto VARBINARY(MAX), -- Cambiado de NVARCHAR a VARBINARY(MAX) :cite[1]:cite[5]
-    FechaRegistro DATETIME DEFAULT GETDATE()
-);
+CREATE TABLE NivelesUsuario ( IDNivel INT PRIMARY KEY IDENTITY(1,1), Descripcion NVARCHAR(20) NOT NULL, RolNombre VARCHAR(50) NOT NULL DEFAULT 'Cliente', UrlDefault VARCHAR(100) NULL)
 
 
-CREATE TABLE TiposCombustible (
-    IDCombustible INT PRIMARY KEY IDENTITY(1,1),
-    Descripcion NVARCHAR(50) NOT NULL
-);
+CREATE TABLE EstadosTurno ( IDEstadoTurno INT PRIMARY KEY IDENTITY(1,1), Descripcion NVARCHAR(20) NOT NULL );
 
-CREATE TABLE Vehiculos (
-    IDVehiculo INT PRIMARY KEY IDENTITY(1,1),
-    Marca NVARCHAR(50) NOT NULL,
-    Modelo NVARCHAR(50) NOT NULL,
-    Year INT NOT NULL,
-    Patente NVARCHAR(15) UNIQUE NOT NULL,
-    IDCombustible INT FOREIGN KEY REFERENCES TiposCombustible(IDCombustible),
-    Observaciones NVARCHAR(MAX),
-    IDUsuario INT FOREIGN KEY REFERENCES Usuarios(IDUsuario)
-);
+CREATE TABLE Usuarios ( IDUsuario INT PRIMARY KEY IDENTITY(1,1), Email NVARCHAR(100) UNIQUE NOT NULL, Telefono NVARCHAR(20), Nombre NVARCHAR(50) NOT NULL, Apellido NVARCHAR(50) NOT NULL, Contraseña VARBINARY(256) NOT NULL, IDNivel INT FOREIGN KEY REFERENCES NivelesUsuario(IDNivel), Foto VARBINARY(MAX), FechaRegistro DATETIME DEFAULT GETDATE() );
 
-CREATE TABLE Servicios (
-    IDServicio INT PRIMARY KEY IDENTITY(1,1),
-    Nombre NVARCHAR(100) NOT NULL,
-    Precio DECIMAL(10,2) NOT NULL,
-    TiempoEstimado INT NOT NULL,
-    Descripcion NVARCHAR(MAX)
-);
+CREATE TABLE TiposCombustible ( IDCombustible INT PRIMARY KEY IDENTITY(1,1), Descripcion NVARCHAR(50) NOT NULL );
 
-CREATE TABLE Turnos (
-    IDTurno INT PRIMARY KEY IDENTITY(1,1),
-    IDUsuario INT FOREIGN KEY REFERENCES Usuarios(IDUsuario),
-    IDVehiculo INT FOREIGN KEY REFERENCES Vehiculos(IDVehiculo),
-    IDServicio INT FOREIGN KEY REFERENCES Servicios(IDServicio),
-    FechaHora DATETIME NOT NULL,
-    IDEstadoTurno INT FOREIGN KEY REFERENCES EstadosTurno(IDEstadoTurno),
-    Observaciones NVARCHAR(MAX)
-);
+CREATE TABLE Vehiculos ( IDVehiculo INT PRIMARY KEY IDENTITY(1,1), Marca NVARCHAR(50) NOT NULL, Modelo NVARCHAR(50) NOT NULL, Year INT NOT NULL, Patente NVARCHAR(15) UNIQUE NOT NULL, IDCombustible INT FOREIGN KEY REFERENCES TiposCombustible(IDCombustible), Observaciones NVARCHAR(MAX), IDUsuario INT FOREIGN KEY REFERENCES Usuarios(IDUsuario) );
 
-CREATE TABLE Clientes (
-    IDCliente INT PRIMARY KEY IDENTITY(1,1),
-    IDUsuario INT FOREIGN KEY REFERENCES Usuarios(IDUsuario),
-    Telefono NVARCHAR(20),
-    Direccion NVARCHAR(200),
-    Localidad NVARCHAR(100),
-    Provincia NVARCHAR(100),
-    Observaciones NVARCHAR(MAX)
-);
+CREATE TABLE Servicios ( IDServicio INT PRIMARY KEY IDENTITY(1,1), Nombre NVARCHAR(100) NOT NULL, Precio DECIMAL(10,2) NOT NULL, TiempoEstimado INT NOT NULL, Descripcion NVARCHAR(MAX) );
 
--- Insertar datos básicos
-UPDATE NivelesUsuario SET 
-    Descripcion = 'Cliente',
-    RolNombre = 'Cliente',
-    UrlDefault = '/Usuarios/Profile'
-WHERE IDNivel = 1;
+CREATE TABLE Turnos ( IDTurno INT PRIMARY KEY IDENTITY(1,1), IDUsuario INT FOREIGN KEY REFERENCES Usuarios(IDUsuario), IDVehiculo INT FOREIGN KEY REFERENCES Vehiculos(IDVehiculo), IDServicio INT FOREIGN KEY REFERENCES Servicios(IDServicio), FechaHora DATETIME NOT NULL, IDEstadoTurno INT FOREIGN KEY REFERENCES EstadosTurno(IDEstadoTurno), Observaciones NVARCHAR(MAX) );
 
-UPDATE NivelesUsuario SET 
-    Descripcion = 'Administrador', 
-    RolNombre = 'Admin',
-    UrlDefault = '/Admin/Dashboard'
-WHERE IDNivel = 2;
+CREATE TABLE Clientes ( IDCliente INT PRIMARY KEY IDENTITY(1,1), IDUsuario INT FOREIGN KEY REFERENCES Usuarios(IDUsuario), Telefono NVARCHAR(20), Direccion NVARCHAR(200), Localidad NVARCHAR(100), Provincia NVARCHAR(100), Observaciones NVARCHAR(MAX) );
 
-INSERT INTO EstadosTurno (Descripcion) VALUES 
-('Pendiente'),
-('Confirmado'),
-('En Proceso'),
-('Completado'),
-('Cancelado');
+-- Insertar datos básicos 
 
-INSERT INTO TiposCombustible (Descripcion) VALUES 
-('Nafta'),
-('Diesel'),
-('Eléctrico'),
-('Híbrido'),
-('GNC');
+UPDATE NivelesUsuario SET Descripcion = 'Cliente', RolNombre = 'Cliente', UrlDefault = '/Usuarios/Profile' WHERE IDNivel = 1;
 
-INSERT INTO Servicios (Nombre, Precio, TiempoEstimado, Descripcion) VALUES 
-('Cambio de aceite', 2500.00, 30, 'Cambio de aceite y filtro'),
-('Alineación y balanceo', 4500.00, 60, 'Alineación y balanceo de ruedas'),
-('Service completo', 12000.00, 120, 'Service completo de vehículo'),
-('Cambio de pastillas de freno', 8000.00, 45, 'Cambio de pastillas y discos de freno');
+UPDATE NivelesUsuario SET Descripcion = 'Administrador', RolNombre = 'Admin', UrlDefault = '/Admin/Dashboard' WHERE IDNivel = 2;
+
+INSERT INTO EstadosTurno (Descripcion) VALUES ('Pendiente'), ('Confirmado'), ('En Proceso'), ('Completado'), ('Cancelado');
+
+INSERT INTO TiposCombustible (Descripcion) VALUES ('Nafta'), ('Diesel'), ('Eléctrico'), ('Híbrido'), ('GNC');
+
+INSERT INTO Servicios (Nombre, Precio, TiempoEstimado, Descripcion) VALUES ('Cambio de aceite', 2500.00, 30, 'Cambio de aceite y filtro'), ('Alineación y balanceo', 4500.00, 60, 'Alineación y balanceo de ruedas'), ('Service completo', 12000.00, 120, 'Service completo de vehículo'), ('Cambio de pastillas de freno', 8000.00, 45, 'Cambio de pastillas y discos de freno');
 
 GO
