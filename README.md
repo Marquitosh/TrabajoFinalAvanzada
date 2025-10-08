@@ -85,6 +85,19 @@ CREATE TABLE Turnos ( IDTurno INT PRIMARY KEY IDENTITY(1,1), IDUsuario INT FOREI
 
 CREATE TABLE Clientes ( IDCliente INT PRIMARY KEY IDENTITY(1,1), IDUsuario INT FOREIGN KEY REFERENCES Usuarios(IDUsuario), Telefono NVARCHAR(20), Direccion NVARCHAR(200), Localidad NVARCHAR(100), Provincia NVARCHAR(100), Observaciones NVARCHAR(MAX) );
 
+CREATE TABLE PasswordResetTokens (
+    IDToken INT IDENTITY(1,1) PRIMARY KEY,
+    IDUsuario INT NOT NULL,
+    Token NVARCHAR(100) NOT NULL,
+    FechaExpiracion DATETIME2 NOT NULL,
+    Utilizado BIT NOT NULL DEFAULT 0,
+    FechaCreacion DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    CONSTRAINT FK_PasswordResetTokens_Usuarios FOREIGN KEY (IDUsuario) REFERENCES Usuarios(IDUsuario) ON DELETE CASCADE
+);
+
+CREATE INDEX IX_PasswordResetTokens_Token ON PasswordResetTokens(Token);
+CREATE INDEX IX_PasswordResetTokens_FechaExpiracion ON PasswordResetTokens(FechaExpiracion);
+
 -- Insertar datos básicos 
 
 UPDATE NivelesUsuario SET Descripcion = 'Cliente', RolNombre = 'Cliente', UrlDefault = '/Usuarios/Profile' WHERE IDNivel = 1;
