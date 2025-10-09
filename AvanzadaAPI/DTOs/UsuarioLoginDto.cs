@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace AvanzadaAPI.Models
+namespace AvanzadaAPI.DTOs
 {
     public class UsuarioLoginDto
     {

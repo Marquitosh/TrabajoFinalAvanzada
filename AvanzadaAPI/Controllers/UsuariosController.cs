@@ -1,9 +1,11 @@
 ﻿using AvanzadaAPI.Data;
+using AvanzadaAPI.DTOs;
 using AvanzadaAPI.Models;
-using Microsoft.AspNetCore.Identity.Data;
+using AvanzadaAPI.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -14,10 +16,22 @@ namespace AvanzadaAPI.Controllers
     public class UsuariosController : ControllerBase
     {
         private readonly AvanzadaContext _context;
+        private readonly ITokenService _tokenService;
+        private readonly IEmailService _emailService;
+        private readonly ILogger<UsuariosController> _logger;
+        private readonly IConfiguration _configuration;
 
-        public UsuariosController(AvanzadaContext context)
+        public UsuariosController(AvanzadaContext context,
+            ITokenService tokenService,
+            IEmailService emailService,
+            IConfiguration configuration,
+            ILogger<UsuariosController> logger)
         {
             _context = context;
+            _tokenService = tokenService;
+            _emailService = emailService;
+            _configuration = configuration;
+            _logger = logger;
         }
 
         // GET: api/Usuarios
@@ -67,16 +81,13 @@ namespace AvanzadaAPI.Controllers
                     return Unauthorized("Credenciales inválidas");
                 }
 
-                // DEBUG
-                Console.WriteLine($"IDNivel desde BD: {usuario.IDNivel}");
-
                 var response = new UsuarioLoginDto
                 {
                     IDUsuario = usuario.IDUsuario,
                     Email = usuario.Email,
                     Nombre = usuario.Nombre,
                     Apellido = usuario.Apellido,
-                    IDNivel = usuario.IDNivel, // Esto debería ser 2
+                    IDNivel = usuario.IDNivel,
                     Foto = usuario.Foto,
                     RolNombre = usuario.NivelUsuario?.RolNombre
                 };
@@ -219,12 +230,6 @@ namespace AvanzadaAPI.Controllers
             }
         }
 
-        private byte[] HashPassword(string password)
-        {
-            using var sha256 = SHA256.Create();
-            return sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-        }
-
         // DELETE: api/Usuarios/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUsuario(int id)
@@ -293,7 +298,6 @@ namespace AvanzadaAPI.Controllers
                     return NotFound("Usuario no encontrado");
                 }
 
-                // Verificar que el nuevo rol existe
                 var rolExiste = await _context.NivelesUsuario.AnyAsync(n => n.IDNivel == actualizarRolDto.IDNivel);
                 if (!rolExiste)
                 {
@@ -311,11 +315,107 @@ namespace AvanzadaAPI.Controllers
             }
         }
 
+        // Endpoints para recuperación de contraseña
+        [HttpPost("forgot-password")]
+        public async Task<ActionResult> ForgotPassword(ForgotPasswordRequest request)
+        {
+            try
+            {
+                var usuario = await _context.Usuarios
+                    .FirstOrDefaultAsync(u => u.Email == request.Email);
+
+                if (usuario == null)
+                {
+                    return Ok(new { message = "Si el email existe, se enviarán instrucciones de recuperación." });
+                }
+
+                var token = await _tokenService.GeneratePasswordResetTokenAsync(usuario.IDUsuario);
+
+                var emailSent = await _emailService.SendPasswordResetEmailAsync(
+                    usuario.Email,
+                    usuario.NombreCompleto,
+                    token
+                );
+
+                if (!emailSent)
+                {
+                    _logger.LogError("Falló el envío de email de recuperación a {Email}", usuario.Email);
+                    return StatusCode(500, new { message = "Error al enviar el email de recuperación. Por favor, intente más tarde." });
+                }
+
+                _logger.LogInformation("Email de recuperación enviado exitosamente a {Email}", usuario.Email);
+                return Ok(new { message = "Se han enviado instrucciones de recuperación a tu email." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en ForgotPassword para email: {Email}", request.Email);
+                return StatusCode(500, new { message = "Error interno del servidor." });
+            }
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<ActionResult> ResetPassword(ResetPasswordRequest request)
+        {
+            try
+            {
+                var resetToken = await _tokenService.ValidateTokenAsync(request.Token);
+                if (resetToken == null)
+                {
+                    return BadRequest(new { message = "Token inválido o expirado." });
+                }
+
+                resetToken.Usuario.Contraseña = HashPassword(request.NewPassword);
+
+                await _tokenService.MarkTokenAsUsedAsync(request.Token);
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Contraseña actualizada correctamente." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en ResetPassword con token: {Token}", request.Token);
+                return StatusCode(500, new { message = "Error interno del servidor." });
+            }
+        }
+
+        [HttpPost("validate-reset-token")]
+        public async Task<ActionResult> ValidateResetToken(ValidateTokenRequest request)
+        {
+            try
+            {
+                var resetToken = await _tokenService.ValidateTokenAsync(request.Token);
+                if (resetToken == null)
+                {
+                    return BadRequest(new { message = "Token inválido o expirado." });
+                }
+
+                return Ok(new
+                {
+                    valid = true,
+                    email = resetToken.Usuario.Email,
+                    message = "Token válido."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validando token: {Token}", request.Token);
+                return StatusCode(500, new { message = "Error validando token." });
+            }
+        }
+
         private bool VerifyPassword(string password, byte[] storedHash)
         {
             using var sha256 = SHA256.Create();
             var passwordHash = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
             return passwordHash.SequenceEqual(storedHash);
+        }
+
+
+        private byte[] HashPassword(string password)
+        {
+            using var sha256 = SHA256.Create();
+            return sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
         }
 
         public class ActualizarRolDto
@@ -338,6 +438,22 @@ namespace AvanzadaAPI.Controllers
             public string Apellido { get; set; }
             public string NivelDescripcion { get; set; }
             public string Foto { get; set; }
+        }
+
+        public class ForgotPasswordRequest
+        {
+            public string Email { get; set; } = string.Empty;
+        }
+
+        public class ResetPasswordRequest
+        {
+            public string Token { get; set; } = string.Empty;
+            public string NewPassword { get; set; } = string.Empty;
+        }
+
+        public class ValidateTokenRequest
+        {
+            public string Token { get; set; } = string.Empty;
         }
     }
 }

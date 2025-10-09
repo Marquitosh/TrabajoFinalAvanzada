@@ -37,12 +37,6 @@ namespace AvanzadaWeb.Controllers
             return View(usuario);
         }
 
-        public async Task<IActionResult> Edit(int id)
-        {
-            var usuario = await _apiService.GetAsync<UsuarioViewModel>($"usuarios/{id}");
-            return View(usuario);
-        }
-
         [HttpPost]
         public async Task<IActionResult> Edit(int id, UsuarioViewModel usuario)
         {

@@ -19,8 +19,14 @@ namespace AvanzadaAPI.Data
         public DbSet<Turno> Turnos { get; set; }
         public DbSet<Cliente> Clientes { get; set; }
         public DbSet<Log> Logs { get; set; }
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<PasswordResetToken>()
+                .HasOne(pt => pt.Usuario)
+                .WithMany()
+                .HasForeignKey(pt => pt.IDUsuario)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

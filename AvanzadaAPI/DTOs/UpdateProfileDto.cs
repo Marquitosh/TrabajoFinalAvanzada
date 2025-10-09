@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace AvanzadaAPI.Models
+namespace AvanzadaAPI.DTOs
 {
     public class UpdateProfileDto
     {

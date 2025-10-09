@@ -1,5 +1,4 @@
-﻿using AvanzadaAPI.Models;
-using AvanzadaWeb.Models;
+﻿using AvanzadaWeb.Models;
 using AvanzadaWeb.Services;
 using AvanzadaWeb.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -13,17 +12,17 @@ namespace AvanzadaWeb.Controllers
     public class AccountController : Controller
     {
         private readonly IApiService _apiService;
-        private static Dictionary<string, string> _recoveryCodes = new Dictionary<string, string>();
+        private readonly ILogger<AccountController> _logger;
 
-        public AccountController(IApiService apiService)
+        public AccountController(IApiService apiService, ILogger<AccountController> logger)
         {
             _apiService = apiService;
+            _logger = logger;
         }
 
         // GET: Account/Login
         public IActionResult Login()
         {
-            // Si ya está logueado, redirigir al home
             if (HttpContext.Session.GetString("User") != null)
             {
                 return RedirectToAction("Index", "Home");
@@ -73,14 +72,6 @@ namespace AvanzadaWeb.Controllers
             return View(model);
         }
 
-        // Método para verificar contraseña
-        private bool VerifyPassword(string password, byte[] storedHash)
-        {
-            using var sha256 = SHA256.Create();
-            var passwordHash = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-            return passwordHash.SequenceEqual(storedHash);
-        }
-
         // GET: Account/Logout
         public IActionResult Logout()
         {
@@ -102,7 +93,6 @@ namespace AvanzadaWeb.Controllers
             {
                 try
                 {
-                    // Crear el objeto usuario para enviar a la API
                     var usuario = new
                     {
                         Nombre = model.Nombre,
@@ -110,18 +100,16 @@ namespace AvanzadaWeb.Controllers
                         Email = model.Email,
                         Telefono = model.Telefono,
                         ContraseñaString = model.Password,
-                        IDNivel = 1 // Cliente por defecto
+                        IDNivel = 1
                     };
 
                     var resultado = await _apiService.PostAsync<object>("usuarios", usuario);
 
-                    // registro exitoso
                     TempData["MensajeExito"] = "Registro exitoso. Ya puedes iniciar sesión.";
                     return RedirectToAction("Login");
                 }
                 catch (Exception ex)
                 {
-                    // Manejar errores específicos de la API
                     if (ex.Message.Contains("El email ya está registrado"))
                     {
                         ModelState.AddModelError("Email", "El email ya está registrado");
@@ -133,85 +121,107 @@ namespace AvanzadaWeb.Controllers
                 }
             }
 
-            // algo falló, mostrar el formulario nuevamente
+            return View(model);
+        }
+
+        // GET: Account/ForgotPassword
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+
+        // POST: Account/ForgotPassword
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(PasswordRecoveryRequest model, string? email)
+        {
+            if (string.IsNullOrEmpty(email))
+            {
+                TempData["ErrorMessage"] = "El email es requerido";
+                return View();
+            }
+
+            if (!new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(email))
+            {
+                TempData["ErrorMessage"] = "El formato del email no es válido";
+                return View();
+            }
+
+            try
+            {
+                var request = new { Email = email };
+                var response = await _apiService.PostAsync<object>("usuarios/forgot-password", request);
+
+                TempData["SuccessMessage"] = "Si el email existe, se han enviado instrucciones de recuperación a tu correo.";
+                return RedirectToAction("Login");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en ForgotPassword para email: {Email}", email);
+
+                // Por seguridad, mostrar el mismo mensaje aunque falle
+                TempData["SuccessMessage"] = "Si el email existe, se han enviado instrucciones de recuperación a tu correo.";
+                return RedirectToAction("Login");
+            }
+        }
+
+        // GET: Account/ResetPassword
+        public IActionResult ResetPassword(string token)
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                TempData["ErrorMessage"] = "Token inválido.";
+                return RedirectToAction("ForgotPassword");
+            }
+
+            var model = new ResetPasswordViewModel { Token = token };
+            return View(model);
+        }
+
+        // POST: Account/ResetPassword
+        [HttpPost]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // Primero validar el token
+                    var validateRequest = new { Token = model.Token };
+                    var validationResponse = await _apiService.PostAsync<object>("usuarios/validate-reset-token", validateRequest);
+
+                    // Si la validación es exitosa, proceder con el reset
+                    var resetRequest = new
+                    {
+                        Token = model.Token,
+                        NewPassword = model.NewPassword
+                    };
+
+                    await _apiService.PostAsync<object>("usuarios/reset-password", resetRequest);
+
+                    TempData["SuccessMessage"] = "Contraseña actualizada correctamente. Ya puedes iniciar sesión.";
+                    return RedirectToAction("Login");
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("Token inválido") || ex.Message.Contains("expirado"))
+                    {
+                        ModelState.AddModelError("", "El enlace de recuperación ha expirado o es inválido. Por favor, solicita uno nuevo.");
+                        return RedirectToAction("ForgotPassword");
+                    }
+
+                    ModelState.AddModelError("", "Error al restablecer la contraseña: " + ex.Message);
+                }
+            }
+
             return View(model);
         }
 
         // GET: Account/Recover
         public IActionResult Recover()
         {
-            // Pasa un nuevo modelo vacío a la vista
-            return View(new RecoverViewModel());
-        }
-
-        // POST: Account/Recover
-        [HttpPost]
-        public async Task<IActionResult> Recover(RecoverViewModel model)
-        {
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    // Si ya se envió el código, verificar y actualizar contraseña
-                    if (model.CodeSent && !string.IsNullOrEmpty(model.VerificationCode))
-                    {
-                        // Verificar el código
-                        if (_recoveryCodes.ContainsKey(model.Email) &&
-                            _recoveryCodes[model.Email] == model.VerificationCode)
-                        {
-                            // Llamar a la API para actualizar la contraseña
-                            var updateRequest = new
-                            {
-                                Email = model.Email,
-                                NewPassword = model.NewPassword
-                            };
-
-                            await _apiService.PostAsync<object>("usuarios/update-password", updateRequest);
-
-                            TempData["MensajeExito"] = "Contraseña actualizada correctamente. Ya puedes iniciar sesión.";
-                            return RedirectToAction("Login");
-                        }
-                        else
-                        {
-                            ModelState.AddModelError("", "Código de verificación incorrecto");
-                            model.CodeSent = true;
-                            return View(model);
-                        }
-                    }
-                    else
-                    {
-                        // Verificar si el email existe
-                        var usuarios = await _apiService.GetAsync<List<UsuarioViewModel>>("usuarios");
-                        var usuario = usuarios.FirstOrDefault(u => u.Email == model.Email);
-
-                        if (usuario != null)
-                        {
-                            // Generar código de verificación con un randomizer
-                            var random = new Random();
-                            var code = random.Next(100000, 999999).ToString();
-
-                            // Guardar el código
-                            _recoveryCodes[model.Email] = code;
-
-                            // Mostrar el código en pantalla
-                            TempData["VerificationCode"] = code;
-
-                            model.CodeSent = true;
-                            return View(model);
-                        }
-                        else
-                        {
-                            ModelState.AddModelError("", "No existe una cuenta con este email");
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    ModelState.AddModelError("", "Error en el proceso de recuperación: " + ex.Message);
-                }
-            }
-
-            return View(model);
+            return RedirectToAction("ForgotPassword");
         }
     }
 }
