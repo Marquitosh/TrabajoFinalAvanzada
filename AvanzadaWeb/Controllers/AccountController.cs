@@ -63,7 +63,7 @@ namespace AvanzadaWeb.Controllers
 
                     return Redirect(sessionUser.UrlDefault);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     ModelState.AddModelError("", "Credenciales inválidas. Por favor, intente nuevamente.");
                     return View(model);

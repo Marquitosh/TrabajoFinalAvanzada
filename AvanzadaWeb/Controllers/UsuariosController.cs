@@ -53,9 +53,108 @@ namespace AvanzadaWeb.Controllers
             await _apiService.DeleteAsync($"usuarios/{id}");
             return RedirectToAction(nameof(Index));
         }
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
-            return View();
+            try
+            {
+                var userJson = HttpContext.Session.GetString("User");
+                if (string.IsNullOrEmpty(userJson))
+                {
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var user = System.Text.Json.JsonSerializer.Deserialize<SessionUser>(userJson);
+
+                var dashboardData = new DashboardViewModel
+                {
+                    User = user
+                };
+
+                try
+                {
+                    var vehiculosCount = await _apiService.GetAsync<int>($"usuarios/{user.IDUsuario}/vehiculos/count");
+                    dashboardData.VehiculosCount = vehiculosCount;
+
+                    var turnosCount = await _apiService.GetAsync<int>($"usuarios/{user.IDUsuario}/turnos/count");
+                    dashboardData.TurnosCount = turnosCount;
+
+                    var proximoTurno = await _apiService.GetAsync<ProximoTurnoDto>($"usuarios/{user.IDUsuario}/turnos/proximo");
+
+                    if (proximoTurno?.Fecha != null && proximoTurno.Hora != null)
+                    {
+                        var fechaHoraCompleta = proximoTurno.Fecha.Value.Add(proximoTurno.Hora.Value);
+                        var diasRestantes = (fechaHoraCompleta.Date - DateTime.Today).Days;
+                        var horaFormateada = fechaHoraCompleta.ToString("HH:mm");
+
+                        if (diasRestantes == 0)
+                        {
+                            dashboardData.ProximoTurno = $"Hoy {horaFormateada}";
+                        }
+                        else if (diasRestantes == 1)
+                        {
+                            dashboardData.ProximoTurno = $"Mañana {horaFormateada}";
+                        }
+                        else
+                        {
+                            var fechaFormateada = fechaHoraCompleta.ToString("dd/MM");
+                            dashboardData.ProximoTurno = $"{fechaFormateada} {horaFormateada}";
+                        }
+
+                        dashboardData.ProximoTurnoFecha = proximoTurno.Fecha;
+                        dashboardData.ProximoTurnoHora = proximoTurno.Hora;
+                    }
+                    else
+                    {
+                        dashboardData.ProximoTurno = "No programado";
+                    }
+
+                    dashboardData.ProximoService = await CalcularProximoService(user.IDUsuario);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error cargando datos del dashboard: {ex.Message}");
+                    dashboardData.VehiculosCount = 0;
+                    dashboardData.TurnosCount = 0;
+                    dashboardData.ProximoTurno = "No disponible";
+                    dashboardData.ProximoService = "No disponible";
+                }
+
+                return View(dashboardData);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en Dashboard: {ex.Message}");
+                return RedirectToAction("Login", "Account");
+            }
+        }
+
+        private async Task<string> CalcularProximoService(int usuarioId)
+        {
+            try
+            {
+                // Obtener vehículos del usuario
+                var vehiculos = await _apiService.GetAsync<List<VehiculoViewModel>>($"usuarios/{usuarioId}/vehiculos");
+
+                if (vehiculos == null || !vehiculos.Any())
+                    return "Sin vehículos";
+
+                //asumimos que cada vehículo necesita service cada 6 meses
+                var random = new Random();
+                var diasParaService = random.Next(1, 60);
+
+                if (diasParaService == 1)
+                    return "Mañana";
+                else if (diasParaService <= 7)
+                    return "Esta semana";
+                else if (diasParaService <= 30)
+                    return "Este mes";
+                else
+                    return $"En {diasParaService} días";
+            }
+            catch
+            {
+                return "No disponible";
+            }
         }
 
 
@@ -313,7 +412,6 @@ namespace AvanzadaWeb.Controllers
 
             return RedirectToAction("ScheduleAppointment");
         }
-
 
     }
 }

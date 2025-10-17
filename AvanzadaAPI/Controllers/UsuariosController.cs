@@ -315,6 +315,109 @@ namespace AvanzadaAPI.Controllers
             }
         }
 
+        //Endpoints Dashboard
+
+        // GET: api/usuarios/{id}/vehiculos/count
+        [HttpGet("{id}/vehiculos/count")]
+        public async Task<ActionResult<int>> GetVehiculosCount(int id)
+        {
+            try
+            {
+                var count = await _context.Vehiculos
+                    .Where(v => v.IDUsuario == id)
+                    .CountAsync();
+
+                return Ok(count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error contando vehículos para usuario {ID}", id);
+                return StatusCode(500, "Error interno del servidor");
+            }
+        }
+
+        [HttpGet("{id}/turnos/proximo")]
+        public async Task<ActionResult<ProximoTurnoDto>> GetProximoTurno(int id)
+        {
+            try
+            {
+                var proximoTurno = await _context.Turnos
+                    .Where(t => t.IDUsuario == id &&
+                               (t.Fecha > DateTime.Today ||
+                               (t.Fecha == DateTime.Today && t.Hora >= DateTime.Now.TimeOfDay)))
+                    .OrderBy(t => t.Fecha)
+                    .ThenBy(t => t.Hora)
+                    .Select(t => new ProximoTurnoDto
+                    {
+                        Fecha = t.Fecha,
+                        Hora = t.Hora,
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (proximoTurno == null)
+                {
+                    return Ok(new ProximoTurnoDto()); // Devuelve objeto vacío
+                }
+
+                return Ok(proximoTurno);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error obteniendo próximo turno para usuario {ID}", id);
+                return StatusCode(500, "Error interno del servidor");
+            }
+        }
+
+        // GET: api/usuarios/{id}/turnos/count
+        [HttpGet("{id}/turnos/count")]
+        public async Task<ActionResult<int>> GetTurnosCount(int id)
+        {
+            try
+            {
+                var count = await _context.Turnos
+                    .Where(t => t.IDUsuario == id &&
+                               (t.Fecha > DateTime.Today ||
+                               (t.Fecha == DateTime.Today && t.Hora >= DateTime.Now.TimeOfDay)))
+                    .CountAsync();
+
+                return Ok(count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error contando turnos para usuario {ID}", id);
+                return StatusCode(500, "Error interno del servidor");
+            }
+        }
+
+        // GET: api/usuarios/{id}/vehiculos
+        [HttpGet("{id}/vehiculos")]
+        public async Task<ActionResult<IEnumerable<VehiculoViewModel>>> GetVehiculosByUsuario(int id)
+        {
+            try
+            {
+                var vehiculos = await _context.Vehiculos
+                    .Where(v => v.IDUsuario == id)
+                    .Include(v => v.TipoCombustible)
+                    .Select(v => new VehiculoViewModel
+                    {
+                        IDVehiculo = v.IDVehiculo,
+                        Marca = v.Marca,
+                        Modelo = v.Modelo,
+                        Patente = v.Patente,
+                        Year = v.Year
+                    })
+                    .ToListAsync();
+
+                return Ok(vehiculos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error obteniendo vehículos para usuario {ID}", id);
+                return StatusCode(500, "Error interno del servidor");
+            }
+        }
+
+
         // Endpoints para recuperación de contraseña
         [HttpPost("forgot-password")]
         public async Task<ActionResult> ForgotPassword(ForgotPasswordRequest request)
@@ -418,6 +521,8 @@ namespace AvanzadaAPI.Controllers
             return sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
         }
 
+
+        //DTOs
         public class ActualizarRolDto
         {
             public int IDNivel { get; set; }
@@ -454,6 +559,23 @@ namespace AvanzadaAPI.Controllers
         public class ValidateTokenRequest
         {
             public string Token { get; set; } = string.Empty;
+        }
+
+        public class ProximoTurnoDto
+        {
+            public DateTime? Fecha { get; set; }
+            public TimeSpan? Hora { get; set; }
+            public string? Descripcion { get; set; }
+            public DateTime? FechaHora => Fecha?.Add(Hora ?? TimeSpan.Zero);
+        }
+
+        public class VehiculoViewModel
+        {
+            public int IDVehiculo { get; set; }
+            public string Marca { get; set; } = string.Empty;
+            public string Modelo { get; set; } = string.Empty;
+            public string Patente { get; set; } = string.Empty;
+            public int Year { get; set; }
         }
     }
 }

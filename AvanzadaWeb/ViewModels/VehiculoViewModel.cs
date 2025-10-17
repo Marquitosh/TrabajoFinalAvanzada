@@ -25,7 +25,14 @@ namespace AvanzadaWeb.ViewModels
 
         public string? Observaciones { get; set; }
 
-        public string? UsuarioNombre { get; set; }
+        // Propiedades para admin
+        public string? NuevaMarca { get; set; }
+        public string? NuevoModelo { get; set; }
+        public string? NuevoCombustible { get; set; }
+
+        // Propiedades para mostrar
         public string? CombustibleDescripcion { get; set; }
+        public string? UsuarioNombre { get; set; }
+        public bool EsAdmin { get; set; }
     }
 }
