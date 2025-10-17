@@ -100,9 +100,21 @@ CREATE INDEX IX_PasswordResetTokens_FechaExpiracion ON PasswordResetTokens(Fecha
 
 -- Insertar datos básicos 
 
-UPDATE NivelesUsuario SET Descripcion = 'Cliente', RolNombre = 'Cliente', UrlDefault = '/Usuarios/Profile' WHERE IDNivel = 1;
+USE AvanzadaDB;
+SET IDENTITY_INSERT NivelesUsuario ON;
 
-UPDATE NivelesUsuario SET Descripcion = 'Administrador', RolNombre = 'Admin', UrlDefault = '/Admin/Dashboard' WHERE IDNivel = 2;
+-- Insertar niveles de usuario si no existen
+IF NOT EXISTS (SELECT 1 FROM NivelesUsuario WHERE IDNivel = 1)
+BEGIN
+    INSERT INTO NivelesUsuario (IDNivel, RolNombre, Descripcion) 
+    VALUES (1, 'Cliente', 'Usuario');
+END
+
+IF NOT EXISTS (SELECT 1 FROM NivelesUsuario WHERE IDNivel = 2)
+BEGIN
+    INSERT INTO NivelesUsuario (IDNivel, RolNombre, Descripcion) 
+    VALUES (2, 'Admin', 'Admin');
+END
 
 INSERT INTO EstadosTurno (Descripcion) VALUES ('Pendiente'), ('Confirmado'), ('En Proceso'), ('Completado'), ('Cancelado');
 
