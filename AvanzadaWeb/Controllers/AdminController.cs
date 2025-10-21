@@ -1,9 +1,12 @@
-﻿using AvanzadaWeb.Services;
+﻿using AvanzadaAPI.Models;
+using AvanzadaWeb.Filters;
+using AvanzadaWeb.Services;
 using AvanzadaWeb.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AvanzadaWeb.Controllers
 {
+    [AuthorizeRole("Admin")]
     public class AdminController : Controller
     {
         private readonly IApiService _apiService;
@@ -60,75 +63,180 @@ namespace AvanzadaWeb.Controllers
         }
 
         // GET: /Admin/ManageAppointments
-        public IActionResult ManageAppointments()
-        {
-            // 🚧 Datos de ejemplo (en un caso real vendrían de la BD)
-            var turnos = new List<AppointmentViewModel>
-        {
-            new AppointmentViewModel
-            {
-                Usuario = "Juan Pérez",
-                Fecha = DateTime.Today.AddDays(2),
-                Hora = "10:00",
-                Servicios = new List<AppointmentServiceViewModel>
-                {
-                    new AppointmentServiceViewModel { Nombre = "Cambio de aceite", Tiempo = 30, Costo = 2500 },
-                    new AppointmentServiceViewModel { Nombre = "Chequeo general", Tiempo = 45, Costo = 3500 }
-                }
-            },
-            new AppointmentViewModel
-            {
-                Usuario = "María Gómez",
-                Fecha = DateTime.Today.AddDays(3),
-                Hora = "14:30",
-                Servicios = new List<AppointmentServiceViewModel>
-                {
-                    new AppointmentServiceViewModel { Nombre = "Alineación y balanceo", Tiempo = 40, Costo = 4000 },
-                    new AppointmentServiceViewModel { Nombre = "Cambio de pastillas de freno", Tiempo = 35, Costo = 3200 }
-                }
-            }
-        };
-
-            return View(turnos);
-        }
-        public IActionResult ManageRoles()
+        public async Task<IActionResult> ManageAppointments()
         {
             try
             {
-                //var userJson = HttpContext.Session.GetString("User");
-                //if (string.IsNullOrEmpty(userJson))
-                //    return RedirectToAction("Login", "Account");
+                var turnos = await _apiService.GetAsync<List<Turno>>("turnos");
 
-                //var sessionUser = JsonSerializer.Deserialize<SessionUser>(userJson);
-                //var vehiculos = await _apiService.GetAsync<List<VehiculoViewModel>>($"vehiculos/Usuario/{sessionUser.IDUsuario}");
+                var turnosViewModel = turnos.Select(t => new AppointmentViewModel
+                {
+                    IDTurno = t.IDTurno,
+                    Usuario = t.Usuario?.NombreCompleto ?? $"Usuario {t.IDUsuario}",
+                    Vehiculo = t.Vehiculo?.Patente ?? $"Vehículo {t.IDVehiculo}",
+                    Fecha = t.Fecha,
+                    Hora = t.Hora.ToString(@"hh\:mm"),
+                    Estado = t.EstadoTurno?.Descripcion ?? "Desconocido",
+                    Servicios = new List<AppointmentServiceViewModel>
+                {
+                    new AppointmentServiceViewModel
+                    {
+                        Nombre = t.Servicio?.Nombre ?? "Servicio no especificado",
+                        Tiempo = t.Servicio?.TiempoEstimado ?? 0,
+                        Costo = t.Servicio?.Precio ?? 0
+                    }
+                },
+                    Observaciones = t.Observaciones
+                }).ToList();
 
-                //return View(vehiculos);
-                return View();
+                return View(turnosViewModel);
             }
             catch (Exception ex)
             {
-                ViewBag.ErrorMessage = "Error al cargar los vehículos: " + ex.Message;
-                return View(new List<VehiculoViewModel>());
+                ViewBag.ErrorMessage = "Error al cargar los turnos: " + ex.Message;
+                return View(new List<AppointmentViewModel>());
             }
         }
 
         // POST: /Admin/ConfirmAppointment
         [HttpPost]
-        public IActionResult ConfirmAppointment(string usuario)
+        public async Task<IActionResult> ConfirmAppointment(int id)
         {
-            // 🚧 Acá va la lógica para confirmar el turno (ej: update en BD)
-            TempData["Message"] = $"El turno de {usuario} fue confirmado.";
+            try
+            {
+                await _apiService.PutAsync<object>($"turnos/{id}/confirmar", null);
+                TempData["Message"] = "El turno fue confirmado exitosamente.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al confirmar el turno: {ex.Message}";
+            }
 
             return RedirectToAction("ManageAppointments");
         }
 
         // POST: /Admin/CancelAppointment
         [HttpPost]
-        public IActionResult CancelAppointment(string usuario)
+        public async Task<IActionResult> CancelAppointment(int id)
         {
-            // 🚧 Acá va la lógica para cancelar el turno (ej: update en BD)
-            TempData["Message"] = $"El turno de {usuario} fue cancelado.";
+            try
+            {
+                await _apiService.PutAsync<object>($"turnos/{id}/cancelar", null);
+                TempData["Message"] = "El turno fue cancelado exitosamente.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al cancelar el turno: {ex.Message}";
+            }
+
             return RedirectToAction("ManageAppointments");
+        }
+
+        // GET: /Admin/ManageLog
+        public async Task<IActionResult> ManageLog()
+        {
+            try
+            {
+                var logs = await _apiService.GetAsync<List<Log>>("logs");
+
+                var logsViewModel = logs.Select(l => new LogViewModel
+                {
+                    Fecha = l.Fecha,
+                    Usuario = l.Usuario,
+                    Accion = l.Accion,
+                    Descripcion = l.Descripcion,
+                    Nivel = l.Nivel,
+                    IPAddress = l.IPAddress
+                }).ToList();
+
+                return View(logsViewModel);
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = "Error al cargar los logs: " + ex.Message;
+                return View(new List<LogViewModel>());
+            }
+        }
+
+        // ManageRoles
+        public async Task<IActionResult> ManageRoles()
+        {
+            try
+            {
+                var usuarios = await _apiService.GetAsync<List<Usuario>>("usuarios");
+
+                var niveles = await _apiService.GetAsync<List<NivelUsuario>>("nivelesusuario");
+
+                // Mapear a ViewModel
+                var usuariosViewModel = usuarios?.Select(u => new UsuarioRoleViewModel
+                {
+                    IDUsuario = u.IDUsuario,
+                    NombreCompleto = $"{u.Nombre} {u.Apellido}",
+                    Email = u.Email,
+                    RolActual = niveles?.FirstOrDefault(n => n.IDNivel == u.IDNivel)?.Descripcion ?? "Desconocido",
+                    IDRolActual = u.IDNivel
+                }).ToList() ?? new List<UsuarioRoleViewModel>();
+
+                var rolesViewModel = niveles?.Select(n => new NivelUsuarioViewModel
+                {
+                    IDNivel = n.IDNivel,
+                    Descripcion = n.Descripcion,
+                    RolNombre = n.RolNombre
+                }).ToList() ?? new List<NivelUsuarioViewModel>();
+
+                var model = new GestionRolesViewModel
+                {
+                    Usuarios = usuariosViewModel,
+                    RolesDisponibles = rolesViewModel
+                };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = "Error al cargar los usuarios: " + ex.Message;
+                return View(new GestionRolesViewModel());
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ActualizarRol(int idUsuario, int nuevoRolId)
+        {
+            try
+            {
+                var usuario = await _apiService.GetAsync<Usuario>($"usuarios/{idUsuario}");
+
+                if (usuario == null)
+                {
+                    TempData["ErrorMessage"] = "Usuario no encontrado.";
+                    return RedirectToAction("ManageRoles");
+                }
+
+                var roles = await _apiService.GetAsync<List<NivelUsuario>>("nivelesusuario");
+                var rolExiste = roles.Any(r => r.IDNivel == nuevoRolId);
+
+                if (!rolExiste)
+                {
+                    TempData["ErrorMessage"] = "El rol seleccionado no existe.";
+                    return RedirectToAction("ManageRoles");
+                }
+
+                var updateData = new
+                {
+                    IDNivel = nuevoRolId
+                };
+
+                await _apiService.PutAsync<object>($"usuarios/{idUsuario}", updateData);
+
+                TempData["SuccessMessage"] = $"Rol actualizado correctamente para {usuario.Nombre} {usuario.Apellido}";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al actualizar el rol: {ex.Message}";
+            }
+
+            return RedirectToAction("ManageRoles");
         }
     }
 }

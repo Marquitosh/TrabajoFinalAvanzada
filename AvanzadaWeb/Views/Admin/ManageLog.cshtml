@@ -1,0 +1,55 @@
+﻿@model IEnumerable<AvanzadaWeb.ViewModels.LogViewModel>
+
+@{
+    ViewData["Title"] = "Logs del Sistema";
+    Layout = "_UserLayout";
+}
+
+<div class="row">
+    <span> Agustin Pierluigi </span>
+    <div class="col-md-12">
+        <h2 class="mb-4">Logs del Sistema</h2>
+
+        @if (TempData["Message"] != null)
+        {
+            <div class="alert alert-info">@TempData["Message"]</div>
+        }
+
+        @foreach (var log in Model)
+        {
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>@log.Usuario</strong>
+                        <span class="text-muted ms-2">
+                            <i class="bi bi-clock"></i> @log.Fecha.ToString("dd/MM/yyyy HH:mm")
+                        </span>
+                    </div>
+                    <span class="badge
+                            @(log.Nivel == "Error" ? "bg-danger" :
+                                                    log.Nivel == "Warning" ? "bg-warning text-dark" :
+                                                    "bg-info text-dark") px-3 py-2">
+                                                                      <i class="bi
+                                @(log.Nivel == "Error" ? "bi-exclamation-triangle-fill" :
+                                                         log.Nivel == "Warning" ? "bi-exclamation-circle" :
+                                                         "bi-info-circle")"></i> @log.Nivel
+                </span>
+            </div>
+
+                <div class="card-body">
+                    <h5 class="card-title">@log.Accion</h5>
+                    <p class="card-text">@log.Descripcion</p>
+                </div>
+            </div>
+                }
+
+        @* Si no hay logs *@
+        @if (!Model.Any())
+        {
+            <div class="alert alert-secondary text-center">
+                <i class="bi bi-journal-text fs-4"></i><br />
+                No se encontraron logs registrados.
+            </div>
+        }
+    </div>
+</div>

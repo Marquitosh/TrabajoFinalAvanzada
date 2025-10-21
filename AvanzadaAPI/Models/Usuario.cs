@@ -30,22 +30,28 @@ namespace AvanzadaAPI.Models
         public byte[] Contraseña { get; set; } = new byte[0];
 
         // Propiedad para recibir la contraseña en texto plano
-        [NotMapped] // Esta propiedad no se guarda en la base de datos
+        [NotMapped]
+        [JsonPropertyName("contraseñaString")]
         public string ContraseñaString { get; set; } = string.Empty;
 
         [ForeignKey("NivelUsuario")]
-        public int IDNivel { get; set; }
+        public int IDNivel { get; set; } = 1;
+
         public NivelUsuario? NivelUsuario { get; set; }
 
-        [MaxLength(255)]
-        public string? Foto { get; set; }
+        public byte[]? Foto { get; set; }
+
         public DateTime FechaRegistro { get; set; } = DateTime.Now;
 
         [JsonIgnore]
         public ICollection<Vehiculo>? Vehiculos { get; set; }
+
         [JsonIgnore]
         public ICollection<Turno>? Turnos { get; set; }
+
         [JsonIgnore]
         public Cliente? Cliente { get; set; }
+
+        public string NombreCompleto => $"{Nombre} {Apellido}";
     }
 }

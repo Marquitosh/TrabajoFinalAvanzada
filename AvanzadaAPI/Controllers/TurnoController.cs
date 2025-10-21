@@ -20,12 +20,23 @@ namespace AvanzadaAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Turno>>> GetTurnos()
         {
-            return await _context.Turnos
-                .Include(t => t.Usuario)
-                .Include(t => t.Vehiculo)
-                .Include(t => t.Servicio)
-                .Include(t => t.EstadoTurno)
-                .ToListAsync();
+            try
+            {
+                var turnos = await _context.Turnos
+                    .Include(t => t.Usuario)
+                    .Include(t => t.Vehiculo)
+                    .Include(t => t.Servicio)
+                    .Include(t => t.EstadoTurno)
+                    .OrderByDescending(t => t.Fecha)
+                    .ThenBy(t => t.Hora)
+                    .ToListAsync();
+
+                return Ok(turnos);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error interno: {ex.Message}");
+            }
         }
 
         // GET: api/Turnos/5
@@ -113,6 +124,53 @@ namespace AvanzadaAPI.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        // PUT: api/turnos/5/confirmar
+        [HttpPut("{id}/confirmar")]
+        public async Task<IActionResult> ConfirmarTurno(int id)
+        {
+            var turno = await _context.Turnos.FindAsync(id);
+            if (turno == null)
+            {
+                return NotFound();
+            }
+
+            // Buscar el ID del estado "Confirmado"
+            var estadoConfirmado = await _context.EstadosTurno
+                .FirstOrDefaultAsync(e => e.Descripcion == "Confirmado");
+
+            if (estadoConfirmado != null)
+            {
+                turno.IDEstadoTurno = estadoConfirmado.IDEstadoTurno;
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+
+            return BadRequest("No se encontró el estado 'Confirmado'");
+        }
+
+        // PUT: api/turnos/5/cancelar
+        [HttpPut("{id}/cancelar")]
+        public async Task<IActionResult> CancelarTurno(int id)
+        {
+            var turno = await _context.Turnos.FindAsync(id);
+            if (turno == null)
+            {
+                return NotFound();
+            }
+
+            var estadoCancelado = await _context.EstadosTurno
+                .FirstOrDefaultAsync(e => e.Descripcion == "Cancelado");
+
+            if (estadoCancelado != null)
+            {
+                turno.IDEstadoTurno = estadoCancelado.IDEstadoTurno;
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+
+            return BadRequest("No se encontró el estado 'Cancelado'");
         }
 
         private bool TurnoExists(int id)

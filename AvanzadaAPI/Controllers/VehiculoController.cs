@@ -109,6 +109,12 @@ namespace AvanzadaAPI.Controllers
             return NoContent();
         }
 
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<TipoCombustible>>> GetTiposCombustible()
+        {
+            return await _context.TiposCombustible.ToListAsync();
+        }
+
         private bool VehiculoExists(int id)
         {
             return _context.Vehiculos.Any(e => e.IDVehiculo == id);

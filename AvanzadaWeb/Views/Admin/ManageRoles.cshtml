@@ -1,41 +1,100 @@
-﻿@{
-    ViewData["Title"] = "Solicitud de Servicios";
+﻿@model AvanzadaWeb.ViewModels.GestionRolesViewModel
+@Html.AntiForgeryToken()
+<input name="__RequestVerificationToken" type="hidden" value="CfDJ8NrAk...largo_token..." />
+
+@{
+    ViewData["Title"] = "Gestión de Roles";
     Layout = "_UserLayout";
-
-    // Ejemplo de lista de servicios hardcodeada
-    var servicios = new List<(int Id, string Nombre)>
-    {
-        (1, "Cambio de aceite"),
-        (2, "Alineación y balanceo"),
-        (3, "Chequeo general"),
-        (4, "Cambio de pastillas de freno")
-    };
-
-    // TODO: En un escenario real, estos servicios deberían venir desde la BD:
-    // var servicios = _context.Servicios.ToList();
 }
 
-<div class="row">
-    <div class="col-md-12">
-        <h2 class="mb-4">Solicitud de Servicios</h2>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-person-gear"></i> Gestión de Roles de Usuario</h2>
+    </div>
 
-        <div class="card">
-            <div class="card-body">
-                <form id="servicesForm">
-                    <ul class="list-group mb-3">
-                        @foreach (var servicio in servicios)
-                        {
-                            <li class="list-group-item d-flex align-items-center">
-                                <input class="form-check-input me-2 service-checkbox" type="checkbox" value="@servicio.Id" data-nombre="@servicio.Nombre" />
-                                <span>@servicio.Nombre</span>
-                            </li>
-                        }
-                    </ul>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
-                    <button type="submit" id="btnAgendar" class="btn btn-primary" disabled>
-                        <i class="bi bi-calendar-plus"></i> Agendar Turno
-                    </button>
-                </form>
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-people"></i> Lista de Usuarios
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Usuarios.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Usuario</th>
+                                        <th>Email</th>
+                                        <th>Rol Actual</th>
+                                        <th>Nuevo Rol</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var usuario in Model.Usuarios)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@usuario.NombreCompleto</strong>
+                                                <br>
+                                                <small class="text-muted">ID: @usuario.IDUsuario</small>
+                                            </td>
+                                            <td>@usuario.Email</td>
+                                            <td>
+                                                <span class="badge @GetRolBadgeClass(usuario.RolActual)">@usuario.RolActual</span>
+                                            </td>
+                                            <td>
+                                                <select class="form-select form-select-sm" id="rol-@usuario.IDUsuario">
+                                                    @foreach (var rol in Model.RolesDisponibles)
+                                                    {
+                                                        <option value="@rol.IDNivel" selected="@(usuario.IDRolActual == rol.IDNivel)">
+                                                            @rol.Descripcion
+                                                        </option>
+                                                    }
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <button type="button"
+                                                        class="btn btn-primary btn-sm"
+                                                        onclick="actualizarRol(@usuario.IDUsuario, '@usuario.NombreCompleto')"
+                                                        data-bs-toggle="tooltip"
+                                                        title="Actualizar rol de usuario">
+                                                    <i class="bi bi-check-circle"></i> Actualizar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center">
+                            <i class="bi bi-info-circle"></i> No hay usuarios registrados en el sistema.
+                        </div>
+                    }
+                </div>
             </div>
         </div>
     </div>
@@ -43,28 +102,100 @@
 
 @section Scripts {
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const checkboxes = document.querySelectorAll(".service-checkbox");
-            const btnAgendar = document.getElementById("btnAgendar");
+        // Función para actualizar roles - CORREGIDA
+        function actualizarRol(idUsuario, nombreUsuario) {
+            console.log('Buscando select con id: rol-' + idUsuario);
 
-            checkboxes.forEach(chk => {
-                chk.addEventListener("change", () => {
-                    const selected = Array.from(checkboxes).some(c => c.checked);
-                    btnAgendar.disabled = !selected;
-                });
+            const selectElement = document.getElementById('rol-' + idUsuario);
+
+            if (!selectElement) {
+                console.error('ERROR: No se encontró el elemento select con id: rol-' + idUsuario);
+                alert('Error: No se pudo encontrar el selector de roles. Recarga la página e intenta nuevamente.');
+                return;
+            }
+
+            const nuevoRolId = selectElement.value;
+
+            console.log('Datos para actualizar rol:', {
+                idUsuario: idUsuario,
+                nombreUsuario: nombreUsuario,
+                nuevoRolId: nuevoRolId
             });
 
-            document.getElementById("servicesForm").addEventListener("submit", function (e) {
-                e.preventDefault();
+            // Obtener el token anti-falsificación
+            const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (!tokenElement) {
+                console.error('ERROR: No se encontró el token anti-falsificación');
+                alert('Error de seguridad: No se pudo verificar la solicitud. Recarga la página e intenta nuevamente.');
+                return;
+            }
 
-                const selectedServices = Array.from(checkboxes)
-                    .filter(c => c.checked)
-                    .map(c => c.value);
+            if (confirm(`¿Estás seguro de que deseas actualizar el rol de "${nombreUsuario}"?`)) {
+                // Crear formulario dinámico para enviar POST
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '@Url.Action("ActualizarRol", "Admin")';
 
-                // Redirigir a la página de Agendar Turno pasando los servicios seleccionados
-                const query = selectedServices.map(id => "ids=" + id).join("&");
-                window.location.href = "/Usuarios/ScheduleAppointment?" + query;
+                // Agregar token anti-falsificación
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = '__RequestVerificationToken';
+                tokenInput.value = tokenElement.value;
+                form.appendChild(tokenInput);
+
+                // Agregar ID de usuario
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'idUsuario';
+                idInput.value = idUsuario;
+                form.appendChild(idInput);
+
+                // Agregar nuevo rol
+                const rolInput = document.createElement('input');
+                rolInput.type = 'hidden';
+                rolInput.name = 'nuevoRolId';
+                rolInput.value = nuevoRolId;
+                form.appendChild(rolInput);
+
+                // Enviar formulario
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        // Inicializar después de que el DOM esté completamente cargado
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM completamente cargado - Inicializando tooltips');
+
+            // Verificar que el token existe
+            const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+            console.log('Token anti-falsificación:', tokenElement ? 'ENCONTRADO' : 'NO ENCONTRADO');
+
+            // Inicializar tooltips de Bootstrap
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Verificar que todos los selects existen
+            const usuarios = @Json.Serialize(Model.Usuarios?.Select(u => u.IDUsuario) ?? new List<int>());
+            usuarios.forEach(id => {
+                const selectId = 'rol-' + id;
+                const selectElement = document.getElementById(selectId);
+                console.log(`Select ${selectId}:`, selectElement ? 'ENCONTRADO' : 'NO ENCONTRADO');
             });
         });
     </script>
+}
+
+@functions {
+    public string GetRolBadgeClass(string rol)
+    {
+        return rol switch
+        {
+            "Administrador" => "bg-danger",
+            "Cliente" => "bg-success",
+            _ => "bg-secondary"
+        };
+    }
 }

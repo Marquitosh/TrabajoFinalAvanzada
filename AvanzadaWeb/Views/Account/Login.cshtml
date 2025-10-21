@@ -6,6 +6,7 @@
 }
 
 <div class="row justify-content-center">
+    <span> Marco Tacchino </span>
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
@@ -29,12 +30,19 @@
                     </div>
                 </form>
                 <div class="text-center mt-3">
-                    <a asp-action="Register">¿No tienes cuenta? Regístrate aquí</a>
+                    <a asp-action="ForgotPassword" class="text-decoration-none">¿Olvidaste tu contraseña?</a>
                 </div>
+
                 <div class="text-center mt-2">
-                    <a asp-action="Recover">¿Olvidaste tu contraseña?</a>
+                    <a asp-action="Register" class="text-decoration-none">¿No tienes cuenta? Regístrate</a>
                 </div>
             </div>
-        </div>
+        </div> 
     </div>
 </div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

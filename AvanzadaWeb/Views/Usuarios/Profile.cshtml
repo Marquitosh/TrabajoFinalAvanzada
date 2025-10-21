@@ -4,33 +4,366 @@
     Layout = "_UserLayout";
 }
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5>Información del Perfil</h5>
+<div class="container">
+    <div class="row justify-content-center">
+        <span>Marco Tacchino</span>
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-person-gear"></i> Mi Perfil</h2>
+                <a asp-controller="Usuarios" asp-action="Dashboard" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Volver al Panel
+                </a>
             </div>
-            <div class="card-body">
-                <form>
-                    <div class="mb-3">
-                        <label class="form-label">Nombre</label>
-                        <input type="text" class="form-control" value="@Model.Nombre" readonly>
+
+            <!-- Mensajes -->
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="row">
+                <!-- Columna Izquierda - Información Personal -->
+                <div class="col-md-8">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-person-badge"></i> Información Personal
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form asp-controller="Usuarios" asp-action="UpdateProfile" method="post" enctype="multipart/form-data" id="profileForm">
+                                <input type="hidden" asp-for="IDUsuario" />
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label asp-for="Nombre" class="form-label fw-bold">Nombre</label>
+                                            <input asp-for="Nombre" class="form-control" placeholder="Tu nombre" />
+                                            <span asp-validation-for="Nombre" class="text-danger small"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label asp-for="Apellido" class="form-label fw-bold">Apellido</label>
+                                            <input asp-for="Apellido" class="form-control" placeholder="Tu apellido" />
+                                            <span asp-validation-for="Apellido" class="text-danger small"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Email" class="form-label fw-bold">Email</label>
+                                    <input asp-for="Email" type="email" class="form-control" placeholder="tu.email@ejemplo.com" />
+                                    <span asp-validation-for="Email" class="text-danger small"></span>
+                                    <div class="form-text">Tu dirección de email única en el sistema</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Telefono" class="form-label fw-bold">Teléfono</label>
+                                    <input asp-for="Telefono" class="form-control" placeholder="+54 11 1234-5678" />
+                                    <span asp-validation-for="Telefono" class="text-danger small"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Foto de Perfil</label>
+                                    <input type="file" class="form-control" name="FotoFile" accept="image/*" id="fotoInput" />
+                                    <div class="form-text">
+                                        Formatos: JPG, PNG, GIF. Máximo 2MB. Opcional.
+                                    </div>
+                                    <div id="imagePreview" class="mt-2 text-center"></div>
+                                </div>
+
+                                <hr class="my-4">
+
+                                <!-- Sección de Cambio de Contraseña -->
+                                <h5 class="mb-3"><i class="bi bi-shield-lock"></i> Cambiar Contraseña</h5>
+                                <p class="text-muted small mb-3">
+                                    Completa solo si deseas cambiar tu contraseña. Déjalos vacíos para mantener la actual.
+                                </p>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="NewPassword" class="form-label fw-bold">Nueva Contraseña</label>
+                                            <input type="password" class="form-control" id="NewPassword" name="NewPassword" 
+                                                   placeholder="Dejar vacío para no cambiar" />
+                                            <div class="form-text">Mínimo 6 caracteres</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="ConfirmPassword" class="form-label fw-bold">Confirmar Contraseña</label>
+                                            <input type="password" class="form-control" id="ConfirmPassword" name="ConfirmPassword" 
+                                                   placeholder="Repetir nueva contraseña" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex gap-2 mt-4">
+                                    <button type="submit" class="btn btn-success px-4">
+                                        <i class="bi bi-check-lg"></i> Guardar Cambios
+                                    </button>
+                                    <button type="reset" class="btn btn-outline-secondary">
+                                        <i class="bi bi-arrow-clockwise"></i> Limpiar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Apellido</label>
-                        <input type="text" class="form-control" value="@Model.Apellido" readonly>
+                </div>
+
+                <!-- Columna Derecha - Información y Foto -->
+                <div class="col-md-4">
+                    <!-- Foto Actual -->
+                     <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info text-white text-center">
+            <h6 class="mb-0"><i class="bi bi-camera"></i> Foto Actual</h6>
+        </div>
+        <div class="card-body text-center p-4">
+            @if (!string.IsNullOrEmpty(Model.Foto))
+            {
+                <img src="data:image/jpeg;base64,@Model.Foto" alt="Foto de perfil" 
+                     class="img-fluid rounded-circle border shadow-sm mb-3"
+                     style="width: 180px; height: 180px; object-fit: cover;" 
+                     id="currentPhoto">
+            }
+            else
+            {
+                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                     style="width: 180px; height: 180px;">
+                    <i class="bi bi-person-fill text-muted" style="font-size: 4rem;"></i>
+                </div>
+            }
+            
+            <!-- Vista previa de nueva foto -->
+            <div id="photoPreview" class="d-none">
+                <img id="previewImage" class="img-fluid rounded-circle border shadow-sm mb-3"
+                     style="width: 180px; height: 180px; object-fit: cover;" 
+                     alt="Vista previa">
+                <p class="text-muted small">Vista previa de la nueva foto</p>
+            </div>
+            <p class="text-muted small mb-0 mt-2">
+                @Model.NombreCompleto
+            </p>
+            <p class="text-muted small">
+                <span class="badge bg-primary">@Model.NivelDescripcion</span>
+            </p>
+        </div>
+    </div
+
+                    <!-- Información de la Cuenta -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="bi bi-info-circle"></i> Información de Cuenta</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold">ID Usuario:</span>
+                                <span class="text-muted">#@Model.IDUsuario</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold">Nivel:</span>
+                                <span class="badge bg-info">@Model.NivelDescripcion</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold">Estado:</span>
+                                <span class="badge bg-success">Activo</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">Miembro desde:</span>
+                                <small class="text-muted">@DateTime.Now.ToString("MMM yyyy")</small>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" value="@Model.Email" readonly>
+
+                    <!-- Consejos Rápidos -->
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="mb-0"><i class="bi bi-lightbulb"></i> Consejos</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled small mb-0">
+                                <li class="mb-2">
+                                    <i class="bi bi-check text-success"></i> Usa una contraseña segura
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check text-success"></i> Actualiza tu foto regularmente
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check text-success"></i> Mantén tu información actualizada
+                                </li>
+                                <li>
+                                    <i class="bi bi-check text-success"></i> Tu email debe ser válido
+                                </li>
+                            </ul>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Teléfono</label>
-                        <input type="text" class="form-control" value="@Model.Telefono" readonly>
-                    </div>
-                    <button type="button" class="btn btn-primary">Editar Información</button>
-                </form>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fotoInput = document.getElementById('fotoInput');
+            const imagePreview = document.getElementById('imagePreview');
+            const newPassword = document.getElementById('NewPassword');
+            const confirmPassword = document.getElementById('ConfirmPassword');
+
+            // Preview de imagen
+            fotoInput.addEventListener('change', function() {
+                const file = this.files[0];
+                imagePreview.innerHTML = '';
+
+                if (file) {
+                    // Validar tamaño (2MB)
+                    if (file.size > 2 * 1024 * 1024) {
+                        alert('La imagen es demasiado grande. Máximo 2MB.');
+                        this.value = '';
+                        return;
+                    }
+
+                    // Validar tipo
+                    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+                    if (!allowedTypes.includes(file.type)) {
+                        alert('Solo se permiten imágenes JPG, PNG o GIF.');
+                        this.value = '';
+                        return;
+                    }
+
+                    // Mostrar preview
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imagePreview.innerHTML = `
+                            <div class="text-center">
+                                <img src="${e.target.result}" alt="Preview" 
+                                     class="img-thumbnail rounded-circle border-primary"
+                                     style="width: 120px; height: 120px; object-fit: cover;">
+                                <p class="small text-success mt-2">
+                                    <i class="bi bi-check-circle"></i> Vista previa
+                                </p>
+                            </div>
+                        `;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Validación de contraseñas en tiempo real
+            confirmPassword.addEventListener('input', function() {
+                if (newPassword.value !== confirmPassword.value) {
+                    confirmPassword.classList.add('is-invalid');
+                    confirmPassword.classList.remove('is-valid');
+                } else if (confirmPassword.value.length > 0) {
+                    confirmPassword.classList.remove('is-invalid');
+                    confirmPassword.classList.add('is-valid');
+                } else {
+                    confirmPassword.classList.remove('is-invalid', 'is-valid');
+                }
+            });
+
+            newPassword.addEventListener('input', function() {
+                if (newPassword.value.length > 0 && newPassword.value.length < 6) {
+                    newPassword.classList.add('is-invalid');
+                    newPassword.classList.remove('is-valid');
+                } else if (newPassword.value.length >= 6) {
+                    newPassword.classList.remove('is-invalid');
+                    newPassword.classList.add('is-valid');
+                } else {
+                    newPassword.classList.remove('is-invalid', 'is-valid');
+                }
+            });
+
+            // Auto-dismiss alerts
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+
+            // Validación del formulario antes de enviar
+            document.getElementById('profileForm').addEventListener('submit', function(e) {
+                const newPass = newPassword.value;
+                const confirmPass = confirmPassword.value;
+
+                // Si se llenó alguna contraseña, validar que ambas coincidan
+                if (newPass || confirmPass) {
+                    if (newPass !== confirmPass) {
+                        e.preventDefault();
+                        alert('Las contraseñas no coinciden. Por favor, verifica.');
+                        confirmPassword.focus();
+                        return false;
+                    }
+
+                    if (newPass.length > 0 && newPass.length < 6) {
+                        e.preventDefault();
+                        alert('La contraseña debe tener al menos 6 caracteres.');
+                        newPassword.focus();
+                        return false;
+                    }
+                }
+            });
+        });
+    </script>
+}
+
+<style>
+    .card {
+        border: none;
+        border-radius: 15px;
+    }
+
+    .card-header {
+        border-radius: 15px 15px 0 0 !important;
+        border: none;
+    }
+
+    .form-control {
+        border-radius: 10px;
+        border: 1px solid #dee2e6;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+    }
+
+    .btn {
+        border-radius: 10px;
+        font-weight: 500;
+    }
+
+    .is-valid {
+        border-color: #198754 !important;
+    }
+
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
+
+    .alert {
+        border-radius: 10px;
+        border: none;
+    }
+</style>

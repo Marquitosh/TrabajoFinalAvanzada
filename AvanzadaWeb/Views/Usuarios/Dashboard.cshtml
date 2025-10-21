@@ -1,22 +1,18 @@
-﻿@{
+﻿@model AvanzadaWeb.ViewModels.DashboardViewModel
+@{
     ViewData["Title"] = "Panel de Usuario";
     Layout = "_UserLayout";
-
-    // Obtener información del usuario de la sesión
-    var userJson = Context.Session.GetString("User");
-    var user = !string.IsNullOrEmpty(userJson) ?
-        System.Text.Json.JsonSerializer.Deserialize<AvanzadaWeb.Models.SessionUser>(userJson) : null;
 }
 
 <div class="row">
+    <span>@Model.User?.Nombre @Model.User?.Apellido</span>
     <div class="col-md-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>Panel de Usuario</h2>
-            <span class="badge bg-info">@user?.NivelUsuario</span>
+            <span class="badge bg-info">@Model.User?.RolNombre</span>
         </div>
 
         <div class="alert alert-info">
-            <h5>¡Bienvenido, @user?.Nombre @user?.Apellido!</h5>
             <p class="mb-0">Desde aquí puedes gestionar toda tu información en el sistema.</p>
         </div>
     </div>
@@ -36,11 +32,11 @@
                 <ul class="list-group list-group-flush mb-3">
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         Vehículos registrados
-                        <span class="badge bg-primary rounded-pill">3</span>
+                        <span class="badge bg-primary rounded-pill">@Model.VehiculosCount</span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         Próximo service
-                        <span class="badge bg-warning rounded-pill">En 15 días</span>
+                        <span class="badge bg-warning rounded-pill">@Model.ProximoService</span>
                     </li>
                 </ul>
                 <a asp-controller="Usuarios" asp-action="MyVehicles" class="btn btn-outline-primary btn-sm">
@@ -63,17 +59,17 @@
                 <ul class="list-group list-group-flush mb-3">
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         Turnos programados
-                        <span class="badge bg-success rounded-pill">2</span>
+                        <span class="badge bg-success rounded-pill">@Model.TurnosCount</span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         Próximo turno
-                        <span class="badge bg-info rounded-pill">Mañana 10:00</span>
+                        <span class="badge bg-info rounded-pill">@Model.ProximoTurno</span>
                     </li>
                 </ul>
-                <a asp-controller="Usuarios" asp-action="MyAppointments" class="btn btn-outline-success btn-sm me-2">
+                <a asp-controller="Turnos" asp-action="Index" class="btn btn-outline-success btn-sm me-2">
                     Ver Turnos
                 </a>
-                <a asp-controller="Usuarios" asp-action="RequestService" class="btn btn-success btn-sm">
+                <a asp-controller="Turnos" asp-action="Create" class="btn btn-success btn-sm">
                     Nuevo Turno
                 </a>
             </div>
@@ -120,8 +116,8 @@
                         </a>
                     </div>
                     <div class="col-md-3 mb-2">
-                        <a asp-controller="Usuarios" asp-action="RequestService" class="btn btn-outline-warning w-100">
-                            <i class="bi bi-tools"></i> Solicitar Servicio
+                        <a asp-controller="Usuarios" asp-action="Profile" class="btn btn-outline-warning w-100">
+                            <i class="bi bi-tools"></i> Actualizar Perfil
                         </a>
                     </div>
                     <div class="col-md-3 mb-2">
