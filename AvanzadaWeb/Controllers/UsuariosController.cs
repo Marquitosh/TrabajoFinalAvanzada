@@ -129,12 +129,19 @@ namespace AvanzadaWeb.Controllers
 
         public IActionResult RequestService()
         {
+            //var userJson = HttpContext.Session.GetString("User");
+            //if (string.IsNullOrEmpty(userJson))
+            //    return RedirectToAction("Login", "Account");
+
             return View();
         }
 
         public IActionResult ScheduleAppointment(List<int> ids)
         {
-            
+            //var userJson = HttpContext.Session.GetString("User");
+            //if (string.IsNullOrEmpty(userJson))
+            //    return RedirectToAction("Login", "Account");
+
             return View();
         }
 
