@@ -109,7 +109,7 @@ namespace AvanzadaAPI.Controllers
             return NoContent();
         }
 
-        [HttpGet]
+        [HttpGet("TiposCombustible")]
         public async Task<ActionResult<IEnumerable<TipoCombustible>>> GetTiposCombustible()
         {
             return await _context.TiposCombustible.ToListAsync();

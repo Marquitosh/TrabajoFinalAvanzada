@@ -1,24 +1,29 @@
 Pasos para levantar el proyecto
-1) Instalar Docker Desktop
+
+1. Instalar Docker Desktop
 
 Asegurate de tener instalado Docker Desktop en tu PC.
 
-2) Levantar el contenedor de SQL Server
+2. Levantar el contenedor de SQL Server
 
-Una vez instalado, abrí la terminal (icono </> abajo a la derecha en Docker Desktop) y pegá el siguiente comando para crear el contenedor:
+Abrí la terminal (icono </> abajo a la derecha en Docker Desktop).
+En Linux/macOS es necesario primero ejecutar el siguiente comando para dar permisos:
+`chmod +x ./docker-entrypoint/init.sh`
 
-docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=Avanzada@1234" -p 1433:1433 --name sql-container -d mcr.microsoft.com/mssql/server:2022-latest
+Si ya tenias creado el contenedor ejecuta primero lo siguiente para eliminarlo y sus datos:
+`docker compose down -v`
 
-3) Configurar la base de datos
+Luego ejecuta para crear el contenedor:
+`docker compose up -d`
+
+3. Conectarse con la base de datos
 
 primero tenemos que tener instalado SQL server management studio.
 El la pestaña ponemos nombre de servidor: Localhost,1433.
 Autentificacion de sql server.
 Inicio de sesion: sa y contraseña: Avanzada@1234.
-Si el contenedor se creó correctamente,te dejo iniciar bien a SQL ya podes ejecutar el script que está más abajo en este README.
-Ese script ya tiene cargados algunos usuarios, tipos de combustible, etc., para que puedan probar las rutas.
 
-4) Ejecutar el proyecto AvanzadaDB
+4. Ejecutar el proyecto AvanzadaDB
 
 Una vez hecho el pull desde Visual Studio (o descargando directamente las carpetas), abrí el proyecto en Visual Studio.
 
@@ -28,7 +33,7 @@ Se va a abrir una página que permite probar directamente los CRUDs.
 
 Usen esa página para testear lo que necesiten.
 
-5) Ejecutar ambos proyectos (backend + frontend)
+5. Ejecutar ambos proyectos (backend + frontend)
 
 Si todo anda bien, para correr todo junto:
 
@@ -42,7 +47,7 @@ Marcar ambos proyectos con la opción Iniciar
 
 De esta forma, cuando ejecuten la solución se va a levantar también el front.
 
-6) Organización del proyecto
+6. Organización del proyecto
 
 En la carpeta Controllers están los métodos de la API.
 
@@ -53,10 +58,10 @@ Si quieren agregar una nueva página, créenla en la carpeta Views.
 👉 Además, ya les dejé creada una carpeta dentro de AvanzadaWeb/Views llamada Usuarios.
 Ahí están los archivos listos (vacíos por ahora) par que ustedes le agreguen su parte de codigo, pero ya está todo apuntando hacia ellos.
 
-👉 El Dashboard muestra el panel de usuario. Para el diseño, fíjense que estoy usando el archivo _UserLayout.cshtml, que está en Views/Shared.
+👉 El Dashboard muestra el panel de usuario. Para el diseño, fíjense que estoy usando el archivo \_UserLayout.cshtml, que está en Views/Shared.
 Solo tienen que llamarlo al inicio de su archivo, tal como se hace en el Dashboard, para que se renderice la parte de diseño que aparece arriba.
 
-7) Reportar errores
+7. Reportar errores
 
 Si algo no funciona, avisen por el grupo y les doy una mano.
 
@@ -69,7 +74,6 @@ USE AvanzadaDB;
 GO
 
 CREATE TABLE NivelesUsuario ( IDNivel INT PRIMARY KEY IDENTITY(1,1), Descripcion NVARCHAR(20) NOT NULL, RolNombre VARCHAR(50) NOT NULL DEFAULT 'Cliente', UrlDefault VARCHAR(100) NULL)
-
 
 CREATE TABLE EstadosTurno ( IDEstadoTurno INT PRIMARY KEY IDENTITY(1,1), Descripcion NVARCHAR(20) NOT NULL );
 
@@ -86,19 +90,19 @@ CREATE TABLE Turnos ( IDTurno INT PRIMARY KEY IDENTITY(1,1), IDUsuario INT FOREI
 CREATE TABLE Clientes ( IDCliente INT PRIMARY KEY IDENTITY(1,1), IDUsuario INT FOREIGN KEY REFERENCES Usuarios(IDUsuario), Telefono NVARCHAR(20), Direccion NVARCHAR(200), Localidad NVARCHAR(100), Provincia NVARCHAR(100), Observaciones NVARCHAR(MAX) );
 
 CREATE TABLE PasswordResetTokens (
-    IDToken INT IDENTITY(1,1) PRIMARY KEY,
-    IDUsuario INT NOT NULL,
-    Token NVARCHAR(100) NOT NULL,
-    FechaExpiracion DATETIME2 NOT NULL,
-    Utilizado BIT NOT NULL DEFAULT 0,
-    FechaCreacion DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-    CONSTRAINT FK_PasswordResetTokens_Usuarios FOREIGN KEY (IDUsuario) REFERENCES Usuarios(IDUsuario) ON DELETE CASCADE
+IDToken INT IDENTITY(1,1) PRIMARY KEY,
+IDUsuario INT NOT NULL,
+Token NVARCHAR(100) NOT NULL,
+FechaExpiracion DATETIME2 NOT NULL,
+Utilizado BIT NOT NULL DEFAULT 0,
+FechaCreacion DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+CONSTRAINT FK_PasswordResetTokens_Usuarios FOREIGN KEY (IDUsuario) REFERENCES Usuarios(IDUsuario) ON DELETE CASCADE
 );
 
 CREATE INDEX IX_PasswordResetTokens_Token ON PasswordResetTokens(Token);
 CREATE INDEX IX_PasswordResetTokens_FechaExpiracion ON PasswordResetTokens(FechaExpiracion);
 
--- Insertar datos básicos 
+-- Insertar datos básicos
 
 USE AvanzadaDB;
 SET IDENTITY_INSERT NivelesUsuario ON;
@@ -106,14 +110,14 @@ SET IDENTITY_INSERT NivelesUsuario ON;
 -- Insertar niveles de usuario si no existen
 IF NOT EXISTS (SELECT 1 FROM NivelesUsuario WHERE IDNivel = 1)
 BEGIN
-    INSERT INTO NivelesUsuario (IDNivel, RolNombre, Descripcion) 
-    VALUES (1, 'Cliente', 'Usuario');
+INSERT INTO NivelesUsuario (IDNivel, RolNombre, Descripcion)
+VALUES (1, 'Cliente', 'Usuario');
 END
 
 IF NOT EXISTS (SELECT 1 FROM NivelesUsuario WHERE IDNivel = 2)
 BEGIN
-    INSERT INTO NivelesUsuario (IDNivel, RolNombre, Descripcion) 
-    VALUES (2, 'Admin', 'Admin');
+INSERT INTO NivelesUsuario (IDNivel, RolNombre, Descripcion)
+VALUES (2, 'Admin', 'Admin');
 END
 
 INSERT INTO EstadosTurno (Descripcion) VALUES ('Pendiente'), ('Confirmado'), ('En Proceso'), ('Completado'), ('Cancelado');
@@ -123,3 +127,7 @@ INSERT INTO TiposCombustible (Descripcion) VALUES ('Nafta'), ('Diesel'), ('Eléc
 INSERT INTO Servicios (Nombre, Precio, TiempoEstimado, Descripcion) VALUES ('Cambio de aceite', 2500.00, 30, 'Cambio de aceite y filtro'), ('Alineación y balanceo', 4500.00, 60, 'Alineación y balanceo de ruedas'), ('Service completo', 12000.00, 120, 'Service completo de vehículo'), ('Cambio de pastillas de freno', 8000.00, 45, 'Cambio de pastillas y discos de freno');
 
 GO
+
+```
+
+```

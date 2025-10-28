@@ -343,16 +343,14 @@ namespace AvanzadaAPI.Controllers
             {
                 var proximoTurno = await _context.Turnos
                     .Where(t => t.IDUsuario == id &&
-                               (t.Fecha > DateTime.Today ||
-                               (t.Fecha == DateTime.Today && t.Hora >= DateTime.Now.TimeOfDay)))
-                    .OrderBy(t => t.Fecha)
-                    .ThenBy(t => t.Hora)
+                                t.FechaHora >= DateTime.Now)
+                    .OrderBy(t => t.FechaHora)
                     .Select(t => new ProximoTurnoDto
                     {
-                        Fecha = t.Fecha,
-                        Hora = t.Hora,
+                        Fecha = t.FechaHora.Date,
+                        Hora = t.FechaHora.TimeOfDay,
                     })
-                    .FirstOrDefaultAsync();
+                    .FirstOrDefaultAsync(); ;
 
                 if (proximoTurno == null)
                 {
@@ -376,8 +374,7 @@ namespace AvanzadaAPI.Controllers
             {
                 var count = await _context.Turnos
                     .Where(t => t.IDUsuario == id &&
-                               (t.Fecha > DateTime.Today ||
-                               (t.Fecha == DateTime.Today && t.Hora >= DateTime.Now.TimeOfDay)))
+                                t.FechaHora >= DateTime.Now) // <-- CORREGIDO
                     .CountAsync();
 
                 return Ok(count);
@@ -530,8 +527,8 @@ namespace AvanzadaAPI.Controllers
 
         public class LoginRequest
         {
-            public string Email { get; set; }
-            public string Password { get; set; }
+            public required string Email { get; set; }
+            public required string Password { get; set; }
         }
 
         public class UsuarioViewModel

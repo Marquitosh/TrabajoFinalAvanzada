@@ -19,9 +19,9 @@ namespace AvanzadaWeb.Controllers
             return View(turnos);
         }
 
-        public IActionResult Create()
+        public IActionResult Create() 
         {
-            return View();
+            return RedirectToAction("RequestService", "Usuarios");
         }
 
         [HttpPost]
