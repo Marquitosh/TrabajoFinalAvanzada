@@ -191,19 +191,7 @@
             e.target.value = e.target.value.toUpperCase();
         });
 
-        // Validar formato de patente argentina
-        patenteInput.addEventListener('blur', function(e) {
-            const patente = e.target.value.trim();
-
-            // Expresiones regulares para patentes argentinas
-            const formatoViejo = /^[A-Z]{3}\d{3}$/;  // ABC123
-            const formatoNuevo = /^[A-Z]{2}\d{3}[A-Z]{2}$/;  // AB123CD
-
-            if (patente && !formatoViejo.test(patente) && !formatoNuevo.test(patente)) {
-                alert('Formato de patente inválido.\nFormatos válidos:\n- ABC123 (formato viejo)\n- AB123CD (formato nuevo)');
-              //  e.target.focus();
-            }
-        });
+        
 
         // Validar año
         document.querySelector('input[name="Year"]').addEventListener('change', function(e) {
@@ -224,6 +212,7 @@
 
             if (!formatoViejo.test(patente) && !formatoNuevo.test(patente)) {
                 e.preventDefault();
+                console.log("validacion adicional");
                 alert('Por favor, ingrese una patente válida:\n- ABC123 (formato viejo)\n- AB123CD (formato nuevo)');
                 patenteInput.focus();
             }

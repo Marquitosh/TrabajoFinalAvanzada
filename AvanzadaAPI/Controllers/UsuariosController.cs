@@ -4,8 +4,6 @@ using AvanzadaAPI.Models;
 using AvanzadaAPI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -34,6 +32,66 @@ namespace AvanzadaAPI.Controllers
             _logger = logger;
         }
 
+        // Método auxiliar para registrar logs
+        private async Task RegistrarLog(string nivel, string accion, string descripcion)
+        {
+            try
+            {
+                var usuario = User?.Identity?.Name ?? "Anónimo";
+
+                // Obtener IP Address de forma segura
+                string? ipAddress = null;
+                if (HttpContext?.Connection?.RemoteIpAddress != null)
+                {
+                    var ip = HttpContext.Connection.RemoteIpAddress.ToString();
+                    ipAddress = ip.Length > 50 ? ip.Substring(0, 50) : ip;
+                }
+
+                // Obtener User Agent de forma segura
+                string? userAgent = null;
+                if (HttpContext?.Request?.Headers != null &&
+                    HttpContext.Request.Headers.TryGetValue("User-Agent", out var userAgentValue))
+                {
+                    var ua = userAgentValue.ToString();
+                    userAgent = ua.Length > 500 ? ua.Substring(0, 500) : ua;
+                }
+
+                var log = new Log
+                {
+                    Fecha = DateTime.Now,
+                    Nivel = nivel.Length > 20 ? nivel.Substring(0, 20) : nivel,
+                    Accion = accion.Length > 100 ? accion.Substring(0, 100) : accion,
+                    Descripcion = descripcion.Length > 500 ? descripcion.Substring(0, 497) + "..." : descripcion,
+                    Usuario = usuario.Length > 100 ? usuario.Substring(0, 100) : usuario,
+                    IPAddress = ipAddress,
+                    UserAgent = userAgent
+                };
+
+                _context.Logs.Add(log);
+
+                // Guardar en una transacción separada para evitar conflictos
+                var affectedRows = await _context.SaveChangesAsync();
+
+                if (affectedRows > 0)
+                {
+                    _logger.LogInformation("Log guardado exitosamente: {Accion}", accion);
+                }
+                else
+                {
+                    _logger.LogWarning("SaveChanges no afectó ninguna fila al guardar log: {Accion}", accion);
+                }
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "Error de base de datos al registrar log. Accion: {Accion}, InnerException: {Inner}",
+                    accion, dbEx.InnerException?.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error general al registrar log en base de datos. Accion: {Accion}", accion);
+            }
+        }
+
         // GET: api/Usuarios
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuarios()
@@ -46,7 +104,6 @@ namespace AvanzadaAPI.Controllers
         {
             try
             {
-
                 var usuario = await _context.Usuarios
                     .Include(u => u.NivelUsuario)
                     .FirstOrDefaultAsync(u => u.IDUsuario == id);
@@ -78,8 +135,21 @@ namespace AvanzadaAPI.Controllers
 
                 if (usuario == null || !VerifyPassword(loginRequest.Password, usuario.Contraseña))
                 {
+                    // LOG: Intento de login fallido
+                    await RegistrarLog(
+                        "Warning",
+                        "Login fallido",
+                        $"Email: {loginRequest.Email}"
+                    );
                     return Unauthorized("Credenciales inválidas");
                 }
+
+                // LOG: Login exitoso
+                await RegistrarLog(
+                    "Info",
+                    "Login exitoso",
+                    $"Usuario: {usuario.Nombre} {usuario.Apellido} (ID: {usuario.IDUsuario})"
+                );
 
                 var response = new UsuarioLoginDto
                 {
@@ -92,12 +162,11 @@ namespace AvanzadaAPI.Controllers
                     RolNombre = usuario.NivelUsuario?.RolNombre
                 };
 
-                Console.WriteLine($"IDNivel en DTO: {response.IDNivel}");
-
                 return Ok(response);
             }
             catch (Exception ex)
             {
+                await RegistrarLog("Error", "Error en login", ex.Message);
                 return StatusCode(500, $"Error interno: {ex.Message}");
             }
         }
@@ -126,37 +195,56 @@ namespace AvanzadaAPI.Controllers
                     }
                 }
 
-                if (!string.IsNullOrEmpty(usuarioActualizado.Nombre))
-                {
-                    usuario.Nombre = usuarioActualizado.Nombre;
-                }
+                // Construir descripción de cambios
+                var cambios = new List<string>();
+                if (!string.IsNullOrEmpty(usuarioActualizado.Nombre) && usuarioActualizado.Nombre != usuario.Nombre)
+                    cambios.Add($"Nombre: {usuario.Nombre} → {usuarioActualizado.Nombre}");
 
-                if (!string.IsNullOrEmpty(usuarioActualizado.Apellido))
-                {
-                    usuario.Apellido = usuarioActualizado.Apellido;
-                }
+                if (!string.IsNullOrEmpty(usuarioActualizado.Apellido) && usuarioActualizado.Apellido != usuario.Apellido)
+                    cambios.Add($"Apellido: {usuario.Apellido} → {usuarioActualizado.Apellido}");
 
-                if (!string.IsNullOrEmpty(usuarioActualizado.Email))
-                {
-                    usuario.Email = usuarioActualizado.Email;
-                }
+                if (!string.IsNullOrEmpty(usuarioActualizado.Email) && usuarioActualizado.Email != usuario.Email)
+                    cambios.Add($"Email: {usuario.Email} → {usuarioActualizado.Email}");
 
-                if (usuarioActualizado.Telefono != null)
-                {
-                    usuario.Telefono = usuarioActualizado.Telefono;
-                }
+                if (usuarioActualizado.Telefono != null && usuarioActualizado.Telefono != usuario.Telefono)
+                    cambios.Add($"Teléfono: {usuario.Telefono} → {usuarioActualizado.Telefono}");
 
                 if (!string.IsNullOrEmpty(usuarioActualizado.ContraseñaString))
-                {
-                    usuario.Contraseña = HashPassword(usuarioActualizado.ContraseñaString);
-                }
+                    cambios.Add("Contraseña actualizada");
 
                 if (usuarioActualizado.Foto != null && usuarioActualizado.Foto.Length > 0)
-                {
+                    cambios.Add("Foto actualizada");
+
+                // Aplicar cambios
+                if (!string.IsNullOrEmpty(usuarioActualizado.Nombre))
+                    usuario.Nombre = usuarioActualizado.Nombre;
+
+                if (!string.IsNullOrEmpty(usuarioActualizado.Apellido))
+                    usuario.Apellido = usuarioActualizado.Apellido;
+
+                if (!string.IsNullOrEmpty(usuarioActualizado.Email))
+                    usuario.Email = usuarioActualizado.Email;
+
+                if (usuarioActualizado.Telefono != null)
+                    usuario.Telefono = usuarioActualizado.Telefono;
+
+                if (!string.IsNullOrEmpty(usuarioActualizado.ContraseñaString))
+                    usuario.Contraseña = HashPassword(usuarioActualizado.ContraseñaString);
+
+                if (usuarioActualizado.Foto != null && usuarioActualizado.Foto.Length > 0)
                     usuario.Foto = usuarioActualizado.Foto;
-                }
 
                 await _context.SaveChangesAsync();
+
+                // LOG: Perfil actualizado
+                if (cambios.Any())
+                {
+                    await RegistrarLog(
+                        "Info",
+                        "Perfil actualizado",
+                        $"Usuario ID: {id} - {string.Join(", ", cambios)}"
+                    );
+                }
 
                 usuario.Contraseña = Array.Empty<byte>();
                 usuario.ContraseñaString = string.Empty;
@@ -170,6 +258,7 @@ namespace AvanzadaAPI.Controllers
             }
             catch (Exception ex)
             {
+                await RegistrarLog("Error", "Error actualizar perfil", $"ID: {id} - {ex.Message}");
                 return StatusCode(500, new { message = $"Error interno: {ex.Message}" });
             }
         }
@@ -181,6 +270,12 @@ namespace AvanzadaAPI.Controllers
             {
                 if (await _context.Usuarios.AnyAsync(u => u.Email == usuario.Email))
                 {
+                    // LOG: Intento de registro con email duplicado
+                    await RegistrarLog(
+                        "Warning",
+                        "Intento registro email duplicado",
+                        $"Email: {usuario.Email}"
+                    );
                     return BadRequest("El email ya está registrado");
                 }
 
@@ -209,6 +304,13 @@ namespace AvanzadaAPI.Controllers
                 _context.Usuarios.Add(usuario);
                 await _context.SaveChangesAsync();
 
+                // LOG: Usuario creado exitosamente
+                await RegistrarLog(
+                    "Info",
+                    "Usuario creado",
+                    $"ID: {usuario.IDUsuario}, Nombre: {usuario.Nombre} {usuario.Apellido}, Email: {usuario.Email}"
+                );
+
                 usuario.Contraseña = Array.Empty<byte>();
                 usuario.ContraseñaString = string.Empty;
 
@@ -216,7 +318,7 @@ namespace AvanzadaAPI.Controllers
             }
             catch (Exception ex)
             {
-
+                await RegistrarLog("Error", "Error crear usuario", ex.Message);
 #if DEBUG
                 return StatusCode(500, new
                 {
@@ -225,25 +327,42 @@ namespace AvanzadaAPI.Controllers
                     stackTrace = ex.StackTrace
                 });
 #else
-            return StatusCode(500, "Error interno del servidor al registrar el usuario");
+                return StatusCode(500, "Error interno del servidor al registrar el usuario");
 #endif
             }
         }
 
-        // DELETE: api/Usuarios/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUsuario(int id)
         {
-            var usuario = await _context.Usuarios.FindAsync(id);
-            if (usuario == null)
+            try
             {
-                return NotFound();
+                var usuario = await _context.Usuarios.FindAsync(id);
+                if (usuario == null)
+                {
+                    return NotFound();
+                }
+
+                // Guardar datos antes de eliminar
+                var datosUsuario = $"ID: {usuario.IDUsuario}, Nombre: {usuario.Nombre} {usuario.Apellido}, Email: {usuario.Email}";
+
+                _context.Usuarios.Remove(usuario);
+                await _context.SaveChangesAsync();
+
+                // LOG: Usuario eliminado
+                await RegistrarLog(
+                    "Critical",
+                    "Usuario eliminado",
+                    datosUsuario
+                );
+
+                return NoContent();
             }
-
-            _context.Usuarios.Remove(usuario);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            catch (Exception ex)
+            {
+                await RegistrarLog("Error", "Error eliminar usuario", $"ID: {id} - {ex.Message}");
+                return StatusCode(500, "Error al eliminar usuario");
+            }
         }
 
         [HttpPut("{id}")]
@@ -257,34 +376,36 @@ namespace AvanzadaAPI.Controllers
                     return NotFound("Usuario no encontrado");
                 }
 
-                // Actualizar solo los campos permitidos
                 if (usuarioActualizado.IDNivel.HasValue)
                 {
-                    // Verificar que el nivel existe
                     var nivelExiste = await _context.NivelesUsuario.AnyAsync(n => n.IDNivel == usuarioActualizado.IDNivel.Value);
                     if (!nivelExiste)
                     {
                         return BadRequest("El nivel de usuario especificado no existe");
                     }
+
+                    var nivelAnterior = usuario.IDNivel;
                     usuario.IDNivel = usuarioActualizado.IDNivel.Value;
+
+                    // LOG: Nivel actualizado
+                    await RegistrarLog(
+                        "Info",
+                        "Nivel usuario actualizado",
+                        $"Usuario ID: {id} - Nivel: {nivelAnterior} → {usuario.IDNivel}"
+                    );
                 }
 
                 await _context.SaveChangesAsync();
 
-                // No devolver la contraseña
                 usuario.Contraseña = Array.Empty<byte>();
 
                 return Ok(usuario);
             }
             catch (Exception ex)
             {
+                await RegistrarLog("Error", "Error actualizar usuario", $"ID: {id} - {ex.Message}");
                 return StatusCode(500, $"Error interno: {ex.Message}");
             }
-        }
-
-        public class UpdateUsuarioDto
-        {
-            public int? IDNivel { get; set; }
         }
 
         [HttpPut("{id}/rol")]
@@ -304,20 +425,113 @@ namespace AvanzadaAPI.Controllers
                     return BadRequest("El rol especificado no existe");
                 }
 
+                var rolAnterior = usuario.IDNivel;
                 usuario.IDNivel = actualizarRolDto.IDNivel;
                 await _context.SaveChangesAsync();
+
+                // LOG: Rol actualizado
+                await RegistrarLog(
+                    "Warning",
+                    "Rol actualizado",
+                    $"Usuario ID: {id} - Rol: {rolAnterior} → {actualizarRolDto.IDNivel}"
+                );
 
                 return Ok(new { mensaje = "Rol actualizado correctamente" });
             }
             catch (Exception ex)
             {
+                await RegistrarLog("Error", "Error actualizar rol", $"ID: {id} - {ex.Message}");
                 return StatusCode(500, $"Error interno: {ex.Message}");
             }
         }
 
-        //Endpoints Dashboard
+        [HttpPost("forgot-password")]
+        public async Task<ActionResult> ForgotPassword(ForgotPasswordRequest request)
+        {
+            try
+            {
+                var usuario = await _context.Usuarios
+                    .FirstOrDefaultAsync(u => u.Email == request.Email);
 
-        // GET: api/usuarios/{id}/vehiculos/count
+                if (usuario == null)
+                {
+                    // LOG: Intento recuperación email no existente
+                    await RegistrarLog(
+                        "Warning",
+                        "Recuperación email inexistente",
+                        $"Email: {request.Email}"
+                    );
+                    return Ok(new { message = "Si el email existe, se enviarán instrucciones de recuperación." });
+                }
+
+                var token = await _tokenService.GeneratePasswordResetTokenAsync(usuario.IDUsuario);
+
+                var emailSent = await _emailService.SendPasswordResetEmailAsync(
+                    usuario.Email,
+                    usuario.NombreCompleto,
+                    token
+                );
+
+                if (!emailSent)
+                {
+                    _logger.LogError("Falló el envío de email de recuperación a {Email}", usuario.Email);
+                    return StatusCode(500, new { message = "Error al enviar el email de recuperación." });
+                }
+
+                // LOG: Email recuperación enviado
+                await RegistrarLog(
+                    "Info",
+                    "Email recuperación enviado",
+                    $"Usuario: {usuario.Nombre} {usuario.Apellido} (ID: {usuario.IDUsuario})"
+                );
+
+                return Ok(new { message = "Se han enviado instrucciones de recuperación a tu email." });
+            }
+            catch (Exception ex)
+            {
+                await RegistrarLog("Error", "Error recuperar contraseña", $"Email: {request.Email} - {ex.Message}");
+                return StatusCode(500, new { message = "Error interno del servidor." });
+            }
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<ActionResult> ResetPassword(ResetPasswordRequest request)
+        {
+            try
+            {
+                var resetToken = await _tokenService.ValidateTokenAsync(request.Token);
+                if (resetToken == null)
+                {
+                    // LOG: Token inválido o expirado
+                    await RegistrarLog(
+                        "Warning",
+                        "Token reset inválido",
+                        $"Token utilizado: {request.Token.Substring(0, Math.Min(10, request.Token.Length))}..."
+                    );
+                    return BadRequest(new { message = "Token inválido o expirado." });
+                }
+
+                resetToken.Usuario.Contraseña = HashPassword(request.NewPassword);
+                await _tokenService.MarkTokenAsUsedAsync(request.Token);
+                await _context.SaveChangesAsync();
+
+                // LOG: Contraseña reseteada exitosamente
+                await RegistrarLog(
+                    "Warning",
+                    "Contraseña reseteada",
+                    $"Usuario ID: {resetToken.Usuario.IDUsuario}"
+                );
+
+                return Ok(new { message = "Contraseña actualizada correctamente." });
+            }
+            catch (Exception ex)
+            {
+                await RegistrarLog("Error", "Error reset contraseña", ex.Message);
+                return StatusCode(500, new { message = "Error interno del servidor." });
+            }
+        }
+
+        // Métodos sin logs (consultas de solo lectura)
         [HttpGet("{id}/vehiculos/count")]
         public async Task<ActionResult<int>> GetVehiculosCount(int id)
         {
@@ -326,7 +540,6 @@ namespace AvanzadaAPI.Controllers
                 var count = await _context.Vehiculos
                     .Where(v => v.IDUsuario == id)
                     .CountAsync();
-
                 return Ok(count);
             }
             catch (Exception ex)
@@ -356,7 +569,7 @@ namespace AvanzadaAPI.Controllers
 
                 if (proximoTurno == null)
                 {
-                    return Ok(new ProximoTurnoDto()); // Devuelve objeto vacío
+                    return Ok(new ProximoTurnoDto());
                 }
 
                 return Ok(proximoTurno);
@@ -368,7 +581,6 @@ namespace AvanzadaAPI.Controllers
             }
         }
 
-        // GET: api/usuarios/{id}/turnos/count
         [HttpGet("{id}/turnos/count")]
         public async Task<ActionResult<int>> GetTurnosCount(int id)
         {
@@ -379,7 +591,6 @@ namespace AvanzadaAPI.Controllers
                                (t.Fecha > DateTime.Today ||
                                (t.Fecha == DateTime.Today && t.Hora >= DateTime.Now.TimeOfDay)))
                     .CountAsync();
-
                 return Ok(count);
             }
             catch (Exception ex)
@@ -389,7 +600,6 @@ namespace AvanzadaAPI.Controllers
             }
         }
 
-        // GET: api/usuarios/{id}/vehiculos
         [HttpGet("{id}/vehiculos")]
         public async Task<ActionResult<IEnumerable<VehiculoViewModel>>> GetVehiculosByUsuario(int id)
         {
@@ -407,78 +617,12 @@ namespace AvanzadaAPI.Controllers
                         Year = v.Year
                     })
                     .ToListAsync();
-
                 return Ok(vehiculos);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error obteniendo vehículos para usuario {ID}", id);
                 return StatusCode(500, "Error interno del servidor");
-            }
-        }
-
-
-        // Endpoints para recuperación de contraseña
-        [HttpPost("forgot-password")]
-        public async Task<ActionResult> ForgotPassword(ForgotPasswordRequest request)
-        {
-            try
-            {
-                var usuario = await _context.Usuarios
-                    .FirstOrDefaultAsync(u => u.Email == request.Email);
-
-                if (usuario == null)
-                {
-                    return Ok(new { message = "Si el email existe, se enviarán instrucciones de recuperación." });
-                }
-
-                var token = await _tokenService.GeneratePasswordResetTokenAsync(usuario.IDUsuario);
-
-                var emailSent = await _emailService.SendPasswordResetEmailAsync(
-                    usuario.Email,
-                    usuario.NombreCompleto,
-                    token
-                );
-
-                if (!emailSent)
-                {
-                    _logger.LogError("Falló el envío de email de recuperación a {Email}", usuario.Email);
-                    return StatusCode(500, new { message = "Error al enviar el email de recuperación. Por favor, intente más tarde." });
-                }
-
-                _logger.LogInformation("Email de recuperación enviado exitosamente a {Email}", usuario.Email);
-                return Ok(new { message = "Se han enviado instrucciones de recuperación a tu email." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error en ForgotPassword para email: {Email}", request.Email);
-                return StatusCode(500, new { message = "Error interno del servidor." });
-            }
-        }
-
-        [HttpPost("reset-password")]
-        public async Task<ActionResult> ResetPassword(ResetPasswordRequest request)
-        {
-            try
-            {
-                var resetToken = await _tokenService.ValidateTokenAsync(request.Token);
-                if (resetToken == null)
-                {
-                    return BadRequest(new { message = "Token inválido o expirado." });
-                }
-
-                resetToken.Usuario.Contraseña = HashPassword(request.NewPassword);
-
-                await _tokenService.MarkTokenAsUsedAsync(request.Token);
-
-                await _context.SaveChangesAsync();
-
-                return Ok(new { message = "Contraseña actualizada correctamente." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error en ResetPassword con token: {Token}", request.Token);
-                return StatusCode(500, new { message = "Error interno del servidor." });
             }
         }
 
@@ -514,15 +658,13 @@ namespace AvanzadaAPI.Controllers
             return passwordHash.SequenceEqual(storedHash);
         }
 
-
         private byte[] HashPassword(string password)
         {
             using var sha256 = SHA256.Create();
             return sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
         }
 
-
-        //DTOs
+        // DTOs
         public class ActualizarRolDto
         {
             public int IDNivel { get; set; }
@@ -534,15 +676,9 @@ namespace AvanzadaAPI.Controllers
             public string Password { get; set; }
         }
 
-        public class UsuarioViewModel
+        public class UpdateUsuarioDto
         {
-            public int IDUsuario { get; set; }
-            public string Email { get; set; }
-            public string Telefono { get; set; }
-            public string Nombre { get; set; }
-            public string Apellido { get; set; }
-            public string NivelDescripcion { get; set; }
-            public string Foto { get; set; }
+            public int? IDNivel { get; set; }
         }
 
         public class ForgotPasswordRequest

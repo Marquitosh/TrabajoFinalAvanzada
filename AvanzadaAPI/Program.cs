@@ -1,3 +1,4 @@
+// AvanzadaAPI/Program.cs
 using AvanzadaAPI.Data;
 using AvanzadaAPI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,6 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 
 builder.Services.AddDbContext<AvanzadaContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
@@ -46,6 +46,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// ? AÑADIR EL MIDDLEWARE DE LOGGING AQUÍ (ANTES DE UseAuthorization)
+app.UseRequestLogging();
+
 app.UseAuthorization();
 app.MapControllers();
 
