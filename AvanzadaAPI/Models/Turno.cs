@@ -1,8 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace AvanzadaAPI.Models
 {
+    [Table("Turno")]
     public class Turno
     {
         [Key]
@@ -10,28 +12,24 @@ namespace AvanzadaAPI.Models
 
         [ForeignKey("Usuario")]
         public int IDUsuario { get; set; }
-        public Usuario? Usuario { get; set; }
+        public virtual Usuario? Usuario { get; set; }
 
         [ForeignKey("Vehiculo")]
         public int IDVehiculo { get; set; }
-        public Vehiculo? Vehiculo { get; set; }
-
-        [ForeignKey("Servicio")]
-        public int IDServicio { get; set; }
-        public Servicio? Servicio { get; set; }
+        public virtual Vehiculo? Vehiculo { get; set; }
 
         [Required]
-        public DateTime Fecha { get; set; }
-
-        [Required]
-        public TimeSpan Hora { get; set; }
-
-        public DateTime FechaCreacion { get; set; } = DateTime.Now;
+        public DateTime FechaHora { get; set; }
 
         [ForeignKey("EstadoTurno")]
         public int IDEstadoTurno { get; set; }
-        public EstadoTurno? EstadoTurno { get; set; }
+        public virtual EstadoTurno? EstadoTurno { get; set; }
 
+        [Column(TypeName = "text")]
         public string? Observaciones { get; set; }
+
+        // Propiedad de navegación: Un turno incluye múltiples servicios
+        [JsonIgnore]
+        public virtual ICollection<Servicio> Servicios { get; set; } = new List<Servicio>();
     }
 }

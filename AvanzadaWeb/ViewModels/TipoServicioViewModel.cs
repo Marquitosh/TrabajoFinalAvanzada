@@ -2,9 +2,11 @@
 
 namespace AvanzadaWeb.ViewModels
 {
-    public class ServicioViewModel
+    // Renombramos la clase
+    public class TipoServicioViewModel
     {
-        public int IDServicio { get; set; }
+        // Renombramos la propiedad ID
+        public int IdTipoServicio { get; set; }
 
         [Required(ErrorMessage = "El nombre es obligatorio")]
         [Display(Name = "Nombre del servicio")]
@@ -18,7 +20,7 @@ namespace AvanzadaWeb.ViewModels
         [Required(ErrorMessage = "El tiempo estimado es obligatorio")]
         [Range(1, int.MaxValue, ErrorMessage = "El tiempo estimado debe ser mayor a 0")]
         [Display(Name = "Tiempo estimado (minutos)")]
-        public int TiempoEstimado { get; set; }
+        public int TiempoEstimado { get; set; } // Coincide con el INT de la DB
 
         [Display(Name = "Descripción")]
         public string Descripcion { get; set; }

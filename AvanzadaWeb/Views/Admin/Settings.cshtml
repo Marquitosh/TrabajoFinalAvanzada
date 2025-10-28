@@ -1,0 +1,515 @@
+﻿@model AvanzadaWeb.ViewModels.ConfiguracionViewModel
+
+@{
+    ViewData["Title"] = "Configuración del Sistema";
+    Layout = "_UserLayout"; // O el layout que uses para el Admin
+}
+
+<h2><i class="bi bi-gear-fill"></i> @ViewData["Title"]</h2>
+<hr />
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        <p>Por favor corrija los siguientes errores:</p>
+        <div asp-validation-summary="All" class="text-danger"></div>
+    </div>
+}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Horarios de Atención</h5>
+    </div>
+    <div class="card-body">
+        <form asp-action="Settings" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="IdHorario" />
+
+            <div class="row g-3">
+                @{
+                    var dias = new[] {
+                                ("Lunes", nameof(Model.LunesInicio), nameof(Model.LunesFin)),
+                                ("Martes", nameof(Model.MartesInicio), nameof(Model.MartesFin)),
+                                ("Miércoles", nameof(Model.MiercolesInicio), nameof(Model.MiercolesFin)),
+                                ("Jueves", nameof(Model.JuevesInicio), nameof(Model.JuevesFin)),
+                                ("Viernes", nameof(Model.ViernesInicio), nameof(Model.ViernesFin)),
+                                ("Sábado", nameof(Model.SabadoInicio), nameof(Model.SabadoFin)),
+                                ("Domingo", nameof(Model.DomingoInicio), nameof(Model.DomingoFin))
+                                };
+                }
+                @foreach (var (nombreDia, Inicio, Fin) in dias)
+                {
+                    <div class="col-md-6 col-lg-4">
+                        <fieldset class="border p-3 rounded">
+                            <legend class="fs-6 px-2">@nombreDia</legend>
+                            <div class="mb-2">
+                                <label asp-for="@Inicio" class="form-label"></label>
+                                <input asp-for="@Inicio" class="form-control" type="time" />
+                                <span asp-validation-for="@Inicio" class="text-danger"></span>
+                            </div>
+                            <div>
+                                <label asp-for="@Fin" class="form-label"></label>
+                                <input asp-for="@Fin" class="form-control" type="time" />
+                                <span asp-validation-for="@Fin" class="text-danger"></span>
+                            </div>
+                        </fieldset>
+                    </div>
+                }
+            </div>
+            <hr />
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Guardar Horarios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Tipos de Combustible</h5>
+        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalAddCombustible">
+            <i class="bi bi-plus-circle"></i> Nuevo
+        </button>
+    </div>
+    <div class="card-body">
+        @if (Model.TiposCombustible.Any())
+        {
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>Descripción</th>
+                        <th style="width: 120px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.TiposCombustible)
+                    {
+                        <tr>
+                            <td>@item.Descripcion</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary" title="Editar"
+                                        onclick="openEditCombustibleModal(@item.IdCombustible, '@item.Descripcion')">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar"
+                                        onclick="confirmDeleteCombustible(@item.IdCombustible, '@item.Descripcion')">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="alert alert-info mb-0">No hay tipos de combustible definidos.</div>
+        }
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Tipos de Servicio</h5>
+        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalAddServicio">
+            <i class="bi bi-plus-circle"></i> Nuevo
+        </button>
+    </div>
+    <div class="card-body">
+        @if (Model.TiposServicio.Any())
+        {
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Precio</th>
+                        <th>Tiempo (min)</th>
+                        <th>Descripción</th>
+                        <th style="width: 120px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.TiposServicio)
+                    {
+                        <tr>
+                            <td>@item.Nombre</td>
+                            <td>@item.Precio.ToString("C")</td>
+                            <td>@item.TiempoEstimado</td>
+                            <td>@item.Descripcion</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary" title="Editar"
+                                        onclick="openEditServicioModal(@item.IdTipoServicio)">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar"
+                                        onclick="confirmDeleteServicio(@item.IdTipoServicio, '@item.Nombre')">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="alert alert-info mb-0">No hay tipos de servicio definidos.</div>
+        }
+    </div>
+</div>
+
+<div class="modal fade" id="modalAddCombustible" tabindex="-1" aria-labelledby="modalAddCombustibleLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAddCombustibleLabel">Nuevo Tipo de Combustible</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAddCombustible">
+                    <div class="mb-3">
+                        <label for="addCombustibleDesc" class="form-label">Descripción</label>
+                        <input type="text" class="form-control" id="addCombustibleDesc" required maxlength="50">
+                        <div class="invalid-feedback">Ingrese una descripción.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="addCombustible()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditCombustible" tabindex="-1" aria-labelledby="modalEditCombustibleLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditCombustibleLabel">Editar Tipo de Combustible</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditCombustible">
+                    <input type="hidden" id="editCombustibleId">
+                    <div class="mb-3">
+                        <label for="editCombustibleDesc" class="form-label">Descripción</label>
+                        <input type="text" class="form-control" id="editCombustibleDesc" required maxlength="50">
+                        <div class="invalid-feedback">Ingrese una descripción.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="updateCombustible()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="modalAddServicio" tabindex="-1" aria-labelledby="modalAddServicioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAddServicioLabel">Nuevo Tipo de Servicio</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAddServicio">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label for="addServicioNombre" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="addServicioNombre" required maxlength="100">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="addServicioPrecio" class="form-label">Precio</label>
+                            <input type="number" step="0.01" min="0.01" class="form-control" id="addServicioPrecio" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="addServicioTiempo" class="form-label">Tiempo Estimado (minutos)</label>
+                            <input type="number" min="1" max="1440" class="form-control" id="addServicioTiempo" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label for="addServicioDesc" class="form-label">Descripción (Opcional)</label>
+                            <textarea class="form-control" id="addServicioDesc" rows="3"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="addServicio()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditServicio" tabindex="-1" aria-labelledby="modalEditServicioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditServicioLabel">Editar Tipo de Servicio</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditServicio">
+                    <input type="hidden" id="editServicioId">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label for="editServicioNombre" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="editServicioNombre" required maxlength="100">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editServicioPrecio" class="form-label">Precio</label>
+                            <input type="number" step="0.01" min="0.01" class="form-control" id="editServicioPrecio" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editServicioTiempo" class="form-label">Tiempo Estimado (minutos)</label>
+                            <input type="number" min="1" max="1440" class="form-control" id="editServicioTiempo" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label for="editServicioDesc" class="form-label">Descripción (Opcional)</label>
+                            <textarea class="form-control" id="editServicioDesc" rows="3"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="updateServicio()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // --- FUNCIONES CRUD PARA TIPOS DE COMBUSTIBLE ---
+
+        // Abrir modal Editar Combustible (llena el form con datos actuales)
+        async function openEditCombustibleModal(id, currentDesc) {
+            document.getElementById('editCombustibleId').value = id;
+            document.getElementById('editCombustibleDesc').value = currentDesc;
+            var myModal = new bootstrap.Modal(document.getElementById('modalEditCombustible'));
+            myModal.show();
+        }
+
+        // Llamada AJAX para Añadir Combustible
+        async function addCombustible() {
+            const descInput = document.getElementById('addCombustibleDesc');
+            if (!descInput.checkValidity()) {
+                 descInput.classList.add('is-invalid');
+                 return; // Detener si el campo no es válido
+            }
+             descInput.classList.remove('is-invalid'); // Quitar posible error previo
+
+            const data = { descripcion: descInput.value };
+            try {
+                const response = await fetch('/api/tiposcombustible', { // URL directa a la API
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (response.ok) {
+                    location.reload(); // Recargar la página si tiene éxito
+                } else {
+                    const error = await response.json();
+                    alert(`Error al añadir: ${error.message || response.statusText}`);
+                }
+            } catch (error) {
+                console.error("Error en addCombustible:", error);
+                alert('Error de red al añadir el tipo de combustible.');
+            }
+        }
+
+        // Llamada AJAX para Actualizar Combustible
+        async function updateCombustible() {
+             const id = document.getElementById('editCombustibleId').value;
+             const descInput = document.getElementById('editCombustibleDesc');
+             if (!descInput.checkValidity()) {
+                 descInput.classList.add('is-invalid');
+                 return;
+            }
+            descInput.classList.remove('is-invalid');
+
+            const data = { descripcion: descInput.value };
+             try {
+                const response = await fetch(`/api/tiposcombustible/${id}`, { // URL directa a la API
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (response.ok) { // Espera 204 No Content
+                    location.reload();
+                } else {
+                    const error = await response.json();
+                    alert(`Error al actualizar: ${error.message || response.statusText}`);
+                }
+            } catch (error) {
+                 console.error("Error en updateCombustible:", error);
+                alert('Error de red al actualizar el tipo de combustible.');
+            }
+        }
+
+        // Confirmación y Llamada AJAX para Eliminar Combustible
+        async function confirmDeleteCombustible(id, desc) {
+            if (confirm(`¿Está seguro que desea eliminar el tipo de combustible "${desc}"?`)) {
+                 try {
+                    const response = await fetch(`/api/tiposcombustible/${id}`, { // URL directa a la API
+                        method: 'DELETE'
+                    });
+                    if (response.ok) { // Espera 204 No Content
+                        location.reload();
+                    } else {
+                        const error = await response.json(); // Leer cuerpo de error (ej: Conflict)
+                        alert(`Error al eliminar: ${error.message || response.statusText}`);
+                    }
+                } catch (error) {
+                     console.error("Error en deleteCombustible:", error);
+                    alert('Error de red al eliminar el tipo de combustible.');
+                }
+            }
+        }
+
+         // --- FUNCIONES CRUD PARA TIPOS DE SERVICIO --- (Similares a las de Combustible)
+
+         // Abrir modal Editar Servicio (requiere obtener datos del servicio por ID)
+         async function openEditServicioModal(id) {
+             try {
+                const response = await fetch(`/api/tiposervicios/${id}`); // GET por ID
+                if (!response.ok) throw new Error('Servicio no encontrado');
+                const servicio = await response.json();
+
+                document.getElementById('editServicioId').value = servicio.idTipoServicio;
+                document.getElementById('editServicioNombre').value = servicio.nombre;
+                document.getElementById('editServicioPrecio').value = servicio.precio;
+                document.getElementById('editServicioTiempo').value = servicio.tiempoEstimado;
+                document.getElementById('editServicioDesc').value = servicio.descripcion || '';
+
+                var myModal = new bootstrap.Modal(document.getElementById('modalEditServicio'));
+                myModal.show();
+             } catch (error) {
+                 console.error("Error al cargar datos para editar servicio:", error);
+                 alert('No se pudo cargar la información del servicio para editar.');
+             }
+         }
+
+        // Llamada AJAX para Añadir Servicio
+        async function addServicio() {
+            const form = document.getElementById('formAddServicio');
+            if (!form.checkValidity()) {
+                 // Bootstrap se encarga de mostrar errores si usas 'required' etc.
+                 form.classList.add('was-validated');
+                 return;
+            }
+
+            const data = {
+                nombre: document.getElementById('addServicioNombre').value,
+                precio: parseFloat(document.getElementById('addServicioPrecio').value),
+                tiempoEstimado: parseInt(document.getElementById('addServicioTiempo').value),
+                descripcion: document.getElementById('addServicioDesc').value || null
+            };
+
+            try {
+                const response = await fetch('/api/tiposervicios', { // URL directa a la API
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (response.ok) {
+                    location.reload();
+                } else {
+                     const error = await response.json();
+                     alert(`Error al añadir: ${error.message || response.statusText}`);
+                }
+            } catch (error) {
+                 console.error("Error en addServicio:", error);
+                alert('Error de red al añadir el tipo de servicio.');
+            }
+        }
+
+        // Llamada AJAX para Actualizar Servicio
+        async function updateServicio() {
+            const form = document.getElementById('formEditServicio');
+             if (!form.checkValidity()) {
+                 form.classList.add('was-validated');
+                 return;
+            }
+
+            const id = document.getElementById('editServicioId').value;
+            const data = {
+                nombre: document.getElementById('editServicioNombre').value,
+                precio: parseFloat(document.getElementById('editServicioPrecio').value),
+                tiempoEstimado: parseInt(document.getElementById('editServicioTiempo').value),
+                descripcion: document.getElementById('editServicioDesc').value || null
+            };
+
+             try {
+                const response = await fetch(`/api/tiposervicios/${id}`, { // URL directa a la API
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (response.ok) { // Espera 204 No Content
+                    location.reload();
+                } else {
+                     const error = await response.json();
+                    alert(`Error al actualizar: ${error.message || response.statusText}`);
+                }
+            } catch (error) {
+                 console.error("Error en updateServicio:", error);
+                alert('Error de red al actualizar el tipo de servicio.');
+            }
+        }
+
+
+        // Confirmación y Llamada AJAX para Eliminar Servicio
+        async function confirmDeleteServicio(id, nombre) {
+            if (confirm(`¿Está seguro que desea eliminar el tipo de servicio "${nombre}"?`)) {
+                 try {
+                    const response = await fetch(`/api/tiposervicios/${id}`, { // URL directa a la API
+                        method: 'DELETE'
+                    });
+                    if (response.ok) { // Espera 204 No Content
+                        location.reload();
+                    } else {
+                         const error = await response.json();
+                        alert(`Error al eliminar: ${error.message || response.statusText}`);
+                    }
+                } catch (error) {
+                     console.error("Error en deleteServicio:", error);
+                    alert('Error de red al eliminar el tipo de servicio.');
+                }
+            }
+        }
+
+        // Exponer funciones al scope global para que los `onclick` las encuentren
+        window.openEditCombustibleModal = openEditCombustibleModal;
+        window.addCombustible = addCombustible;
+        window.updateCombustible = updateCombustible;
+        window.confirmDeleteCombustible = confirmDeleteCombustible;
+        window.openEditServicioModal = openEditServicioModal;
+        window.addServicio = addServicio;
+        window.updateServicio = updateServicio;
+        window.confirmDeleteServicio = confirmDeleteServicio;
+
+    </script>
+}

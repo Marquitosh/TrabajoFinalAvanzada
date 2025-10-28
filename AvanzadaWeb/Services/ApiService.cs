@@ -8,6 +8,7 @@ namespace AvanzadaWeb.Services
         Task<T> GetAsync<T>(string endpoint);
         Task<T> PostAsync<T>(string endpoint, object data);
         Task<T> PutAsync<T>(string endpoint, object data);
+        Task<bool> PutAsync(string endpoint, object data);
         Task<bool> DeleteAsync(string endpoint);
     }
 
@@ -64,6 +65,15 @@ namespace AvanzadaWeb.Services
             response.EnsureSuccessStatusCode();
             var responseContent = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<T>(responseContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+
+        public async Task<bool> PutAsync(string endpoint, object data)
+        {
+            var json = JsonSerializer.Serialize(data);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var response = await _httpClient.PutAsync(endpoint, content);
+            // Only check if the status code indicates success (2xx)
+            return response.IsSuccessStatusCode;
         }
 
         public async Task<bool> DeleteAsync(string endpoint)

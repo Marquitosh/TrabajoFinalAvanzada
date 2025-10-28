@@ -17,13 +17,13 @@ namespace AvanzadaWeb.Controllers
         {
             try
             {
-                var servicios = await _apiService.GetAsync<List<ServicioViewModel>>("servicios");
+                var servicios = await _apiService.GetAsync<List<TipoServicioViewModel>>("servicios");
                 return View(servicios);
             }
             catch (Exception ex)
             {
                 ViewBag.ErrorMessage = "Error al cargar los servicios: " + ex.Message;
-                return View(new List<ServicioViewModel>());
+                return View(new List<TipoServicioViewModel>());
             }
         }
 
@@ -34,13 +34,13 @@ namespace AvanzadaWeb.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(ServicioViewModel servicio)
+        public async Task<IActionResult> Create(TipoServicioViewModel servicio)
         {
             if (ModelState.IsValid)
             {
                 try
                 {
-                    await _apiService.PostAsync<ServicioViewModel>("servicios", servicio);
+                    await _apiService.PostAsync<TipoServicioViewModel>("servicios", servicio);
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
@@ -55,7 +55,7 @@ namespace AvanzadaWeb.Controllers
         {
             try
             {
-                var servicio = await _apiService.GetAsync<ServicioViewModel>($"servicios/{id}");
+                var servicio = await _apiService.GetAsync<TipoServicioViewModel>($"servicios/{id}");
                 if (servicio == null)
                 {
                     return NotFound();
@@ -71,9 +71,9 @@ namespace AvanzadaWeb.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, ServicioViewModel servicio)
+        public async Task<IActionResult> Edit(int id, TipoServicioViewModel servicio)
         {
-            if (id != servicio.IDServicio)
+            if (id != servicio.IdTipoServicio)
             {
                 return NotFound();
             }
@@ -82,7 +82,7 @@ namespace AvanzadaWeb.Controllers
             {
                 try
                 {
-                    await _apiService.PutAsync<ServicioViewModel>($"servicios/{id}", servicio);
+                    await _apiService.PutAsync<TipoServicioViewModel>($"servicios/{id}", servicio);
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)

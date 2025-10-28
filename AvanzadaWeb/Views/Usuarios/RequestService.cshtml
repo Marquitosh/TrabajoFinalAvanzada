@@ -1,18 +1,8 @@
-﻿@{
+﻿@model List<AvanzadaWeb.ViewModels.TipoServicioViewModel>
+
+@{
     ViewData["Title"] = "Solicitud de Servicios";
     Layout = "_UserLayout";
-
-    // Ejemplo de lista de servicios hardcodeada
-    var servicios = new List<(int Id, string Nombre)>
-    {
-        (1, "Cambio de aceite"),
-        (2, "Alineación y balanceo"),
-        (3, "Chequeo general"),
-        (4, "Cambio de pastillas de freno")
-    };
-
-    // TODO: En un escenario real, estos servicios deberían venir desde la BD:
-    // var servicios = _context.Servicios.ToList();
 }
 
 <div class="row">
@@ -20,17 +10,32 @@
     <div class="col-md-12">
         <h2 class="mb-4">Solicitud de Servicios</h2>
 
+        @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
+        {
+            <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+        }
+
         <div class="card">
             <div class="card-body">
                 <form id="servicesForm">
                     <ul class="list-group mb-3">
-                        @foreach (var servicio in servicios)
+
+                        @if (Model != null && Model.Any())
                         {
-                            <li class="list-group-item d-flex align-items-center">
-                                <input class="form-check-input me-2 service-checkbox" type="checkbox" value="@servicio.Id" data-nombre="@servicio.Nombre" />
-                                <span>@servicio.Nombre</span>
-                            </li>
+                            @foreach (var servicio in Model)
+                            {
+                                <li class="list-group-item d-flex align-items-center">
+                                    <input class="form-check-input me-2 service-checkbox" type="checkbox" value="@servicio.IdTipoServicio" data-nombre="@servicio.Nombre" />
+                                    <span>@servicio.Nombre</span>
+
+                                </li>
+                            }
                         }
+                        else if (string.IsNullOrEmpty(ViewBag.ErrorMessage))
+                        {
+                            <li class="list-group-item">No hay servicios disponibles en este momento.</li>
+                        }
+
                     </ul>
 
                     <button type="submit" id="btnAgendar" class="btn btn-primary" disabled>
