@@ -41,7 +41,7 @@ namespace AvanzadaAPI.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutServicio(int id, Servicio servicio)
         {
-            if (id != servicio.IDServicio)
+            if (id != servicio.IdServicio)
             {
                 return BadRequest();
             }
@@ -74,7 +74,7 @@ namespace AvanzadaAPI.Controllers
             _context.Servicios.Add(servicio);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetServicio", new { id = servicio.IDServicio }, servicio);
+            return CreatedAtAction("GetServicio", new { id = servicio.IdServicio }, servicio);
         }
 
         // DELETE: api/Servicios/5
@@ -95,7 +95,7 @@ namespace AvanzadaAPI.Controllers
 
         private bool ServicioExists(int id)
         {
-            return _context.Servicios.Any(e => e.IDServicio == id);
+            return _context.Servicios.Any(e => e.IdServicio == id);
         }
     }
 }

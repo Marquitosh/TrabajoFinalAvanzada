@@ -14,6 +14,7 @@
         public string Vehiculo { get; set; } = string.Empty;
         public DateTime Fecha { get; set; }
         public string Hora { get; set; } = string.Empty;
+        public int DuracionTotal { get; set; }
         public string Estado { get; set; } = string.Empty;
         public List<AppointmentServiceViewModel> Servicios { get; set; } = new();
         public string? Observaciones { get; set; }

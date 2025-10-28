@@ -1,7 +1,10 @@
 ﻿using AvanzadaAPI.Data;
+using AvanzadaAPI.DTOs;
 using AvanzadaAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using System.Diagnostics;
 
 namespace AvanzadaAPI.Controllers
 {
@@ -18,24 +21,41 @@ namespace AvanzadaAPI.Controllers
 
         // GET: api/Turnos
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Turno>>> GetTurnos()
+        public async Task<ActionResult<IEnumerable<TurnoAdminDto>>> GetTurnos()
         {
             try
             {
-                var turnos = await _context.Turnos
-                    .Include(t => t.Usuario)
+                var turnosDto = await _context.Turnos
+                    .Include(t => t.Usuario) // Incluir Usuario para NombreCompleto
                     .Include(t => t.Vehiculo)
-                    .Include(t => t.Servicio)
                     .Include(t => t.EstadoTurno)
-                    .OrderByDescending(t => t.Fecha)
-                    .ThenBy(t => t.Hora)
+                    .Include(t => t.Servicios)
+                        .ThenInclude(s => s.TipoServicio)
+                    .OrderByDescending(t => t.FechaHora)
+                    .Select(t => new TurnoAdminDto
+                    {
+                        IdTurno = t.IDTurno,
+                        Usuario = t.Usuario != null ? t.Usuario.NombreCompleto : $"Usuario ID: {t.IDUsuario}", // Obtener nombre
+                        Vehiculo = (t.Vehiculo != null
+                            ? $"{t.Vehiculo.Marca} {t.Vehiculo.Modelo} ({t.Vehiculo.Patente})"
+                            : "Vehículo no especificado"),
+                        FechaHora = t.FechaHora,
+                        Estado = t.EstadoTurno != null ? t.EstadoTurno.Descripcion : "Desconocido",
+                        Observaciones = t.Observaciones,
+                        DuracionTotal = t.Servicios.Sum(s => s.TipoServicio != null ? s.TipoServicio.TiempoEstimado : 0),
+                        ServiciosNombres = t.Servicios
+                                            .Where(s => s.TipoServicio != null)
+                                            .Select(s => s.TipoServicio!.Nombre)
+                                            .ToList() ?? new List<string>()
+                    })
                     .ToListAsync();
 
-                return Ok(turnos);
+                return Ok(turnosDto); // Devuelve la lista del nuevo DTO
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Error interno: {ex.Message}");
+                // Considera loggear el error (ex)
+                return StatusCode(500, $"Error interno al obtener los turnos: {ex.Message}");
             }
         }
 
@@ -46,8 +66,9 @@ namespace AvanzadaAPI.Controllers
             var turno = await _context.Turnos
                 .Include(t => t.Usuario)
                 .Include(t => t.Vehiculo)
-                .Include(t => t.Servicio)
                 .Include(t => t.EstadoTurno)
+                .Include(t => t.Servicios)
+                    .ThenInclude(s => s.TipoServicio)
                 .FirstOrDefaultAsync(t => t.IDTurno == id);
 
             if (turno == null)
@@ -60,14 +81,35 @@ namespace AvanzadaAPI.Controllers
 
         // GET: api/Turnos/Usuario/5
         [HttpGet("Usuario/{userId}")]
-        public async Task<ActionResult<IEnumerable<Turno>>> GetTurnosByUsuario(int userId)
+        public async Task<ActionResult<IEnumerable<TurnoUsuarioDto>>> GetTurnosByUsuario(int userId)
         {
-            return await _context.Turnos
-                .Include(t => t.Vehiculo)
-                .Include(t => t.Servicio)
-                .Include(t => t.EstadoTurno)
-                .Where(t => t.IDUsuario == userId)
-                .ToListAsync();
+            var turnosDto = await _context.Turnos
+        .Include(t => t.Vehiculo)
+        .Include(t => t.EstadoTurno)
+        .Include(t => t.Servicios)
+            .ThenInclude(s => s.TipoServicio)
+        .Where(t => t.IDUsuario == userId)
+        .OrderByDescending(t => t.FechaHora)
+        .Select(t => new TurnoUsuarioDto
+        {
+            IdTurno = t.IDTurno,
+            Vehiculo = (t.Vehiculo != null
+                ? $"{t.Vehiculo.Marca} {t.Vehiculo.Modelo} ({t.Vehiculo.Patente})"
+                : "Vehículo no especificado"),
+            FechaHora = t.FechaHora,
+            Estado = t.EstadoTurno != null ? t.EstadoTurno.Descripcion : "Desconocido",
+            Observaciones = t.Observaciones,
+
+            // Calcula la duración y extrae los nombres aquí mismo
+            DuracionTotal = t.Servicios.Sum(s => s.TipoServicio != null ? s.TipoServicio.TiempoEstimado : 0),
+            ServiciosNombres = t.Servicios
+                                .Where(s => s.TipoServicio != null) // Evitar nulls
+                                .Select(s => s.TipoServicio!.Nombre) // Obtener solo el nombre
+                                .ToList() ?? new List<string>()
+        })
+        .ToListAsync();
+
+            return Ok(turnosDto);
         }
 
         // PUT: api/Turnos/5
@@ -102,12 +144,68 @@ namespace AvanzadaAPI.Controllers
 
         // POST: api/Turnos
         [HttpPost]
-        public async Task<ActionResult<Turno>> PostTurno(Turno turno)
+        public async Task<ActionResult<Turno>> PostTurno(CreateTurnoDto createTurnoDto)
         {
-            _context.Turnos.Add(turno);
-            await _context.SaveChangesAsync();
+            // Validar que los TipoServicio existan
+            var tiposServicioCount = await _context.TiposServicio
+                                    .CountAsync(ts => createTurnoDto.IdTipoServicios.Contains(ts.IdTipoServicio));
 
-            return CreatedAtAction("GetTurno", new { id = turno.IDTurno }, turno);
+            if (tiposServicioCount != createTurnoDto.IdTipoServicios.Count)
+            {
+                return BadRequest("Uno o más IDs de servicio no son válidos.");
+            }
+
+            // Iniciar una transacción de base de datos
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                // 1. Crear el objeto Turno principal
+                var newTurno = new Turno
+                {
+                    IDUsuario = createTurnoDto.IDUsuario,
+                    IDVehiculo = createTurnoDto.IDVehiculo,
+                    FechaHora = createTurnoDto.FechaHora,
+                    IDEstadoTurno = createTurnoDto.IDEstadoTurno, // Ej: 1 (Pendiente)
+                    Observaciones = "" // Se puede añadir después
+                };
+
+                _context.Turnos.Add(newTurno);
+                await _context.SaveChangesAsync(); // Guardar para obtener el IDTurno
+
+                // 2. Crear los Servicios asociados
+                // Asumimos 1 = "Pendiente" según tu seed.sql de EstadoServicio
+                var defaultEstadoServicioId = 1;
+
+                foreach (var idTipoServicio in createTurnoDto.IdTipoServicios)
+                {
+                    var newServicio = new Servicio
+                    {
+                        IdTurno = newTurno.IDTurno, // ID del turno recién creado
+                        IdTipoServicio = idTipoServicio,
+                        IdEstadoServicio = defaultEstadoServicioId
+                    };
+                    _context.Servicios.Add(newServicio);
+                }
+
+                // 3. Guardar los servicios
+                await _context.SaveChangesAsync();
+
+                // 4. Confirmar la transacción
+                await transaction.CommitAsync();
+
+                // Devolver el turno creado (con su nuevo ID)
+                return CreatedAtAction(nameof(GetTurno), new { id = newTurno.IDTurno }, newTurno);
+            }
+            catch (Exception ex)
+            {
+                // Si algo falla (en la creación del Turno o de los Servicios), revertir todo
+                await transaction.RollbackAsync();
+
+                // Idealmente loggear el error (ex)
+
+                return StatusCode(500, "Error interno al crear el turno y sus servicios.");
+            }
         }
 
         // DELETE: api/Turnos/5

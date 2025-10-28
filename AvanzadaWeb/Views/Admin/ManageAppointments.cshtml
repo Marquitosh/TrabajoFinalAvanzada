@@ -1,4 +1,5 @@
-﻿@{
+﻿@model List<AvanzadaWeb.ViewModels.AppointmentViewModel>
+@{
     ViewData["Title"] = "Gestión de Turnos";
     Layout = "_UserLayout";
 }
@@ -35,55 +36,84 @@
                     {
                         <div class="table-responsive">
                             <table class="table table-striped table-hover">
-                                <thead>
+                                <thead class="thead-dark">
                                     <tr>
-                                        <th>ID</th>
-                                        <th>Usuario</th>
-                                        <th>Vehículo</th>
-                                        <th>Fecha</th>
-                                        <th>Hora</th>
-                                        <th>Servicio</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
+                                        <th>
+                                            Usuario
+                                        </th>
+                                        <th>
+                                            Vehículo
+                                        </th>
+                                        <th>
+                                            Fecha
+                                        </th>
+                                        <th>
+                                            Hora
+                                        </th>
+                                        <th>
+                                            Duración
+                                        </th>
+                                        <th>
+                                            Servicios
+                                        </th>
+                                        <th>
+                                            Estado
+                                        </th>
+                                        <th>
+                                            Acciones
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var turno in Model)
+                                    @foreach (var item in Model)
                                     {
                                         <tr>
-                                            <td>@turno.IDTurno</td>
-                                            <td>@turno.Usuario</td>
-                                            <td>@turno.Vehiculo</td>
-                                            <td>@turno.Fecha.ToString("dd/MM/yyyy")</td>
-                                            <td>@turno.Hora</td>
                                             <td>
-                                                @foreach (var servicio in turno.Servicios)
+                                                @Html.DisplayFor(modelItem => item.Usuario)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.Vehiculo)
+                                            </td>
+                                            <td>
+                                                @item.Fecha.ToString("dd/MM/yyyy")
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.Hora)
+                                            </td>
+                                            <td>
+                                                @item.DuracionTotal min
+                                            </td>
+                                            <td>
+                                                @if (item.Servicios.Any())
                                                 {
-                                                    <span class="badge bg-info">@servicio.Nombre</span>
+                                                    <ul class="list-unstyled mb-0">
+                                                        @foreach (var servicio in item.Servicios)
+                                                        {
+                                                            <li>- @servicio.Nombre</li>
+                                                        }
+                                                    </ul>
+                                                }
+                                                else
+                                                {
+                                                    <span>N/A</span>
                                                 }
                                             </td>
                                             <td>
-                                                <span class="badge @GetEstadoBadgeClass(turno.Estado)">@turno.Estado</span>
+                                                @Html.DisplayFor(modelItem => item.Estado)
                                             </td>
                                             <td>
-                                                @if (turno.Estado == "Pendiente")
+                                                @if (item.Estado == "Pendiente")
                                                 {
-                                                    <form method="post" action="@Url.Action("ConfirmAppointment")" class="d-inline">
-                                                        <input type="hidden" name="id" value="@turno.IDTurno" />
-                                                        <button type="submit" class="btn btn-success btn-sm">
-                                                            <i class="bi bi-check-circle"></i> Confirmar
-                                                        </button>
+                                                    <form asp-action="ConfirmAppointment" asp-route-id="@item.IDTurno" method="post" class="d-inline">
+                                                        <button type="submit" class="btn btn-sm btn-success" title="Confirmar">Confirmar</button>
                                                     </form>
-                                                    <form method="post" action="@Url.Action("CancelAppointment")" class="d-inline">
-                                                        <input type="hidden" name="id" value="@turno.IDTurno" />
-                                                        <button type="submit" class="btn btn-danger btn-sm">
-                                                            <i class="bi bi-x-circle"></i> Cancelar
-                                                        </button>
+                                                    <form asp-action="CancelAppointment" asp-route-id="@item.IDTurno" method="post" class="d-inline">
+                                                        <button type="submit" class="btn btn-sm btn-danger" title="Cancelar">Cancelar</button>
                                                     </form>
                                                 }
                                                 else
                                                 {
-                                                    <span class="text-muted">Sin acciones</span>
+                                                    <span>-</span>
                                                 }
                                             </td>
                                         </tr>

@@ -4,6 +4,7 @@ using AvanzadaWeb.Services;
 using AvanzadaWeb.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using System.Diagnostics;
 
 namespace AvanzadaWeb.Controllers
 {
@@ -353,71 +354,164 @@ namespace AvanzadaWeb.Controllers
                 if (string.IsNullOrEmpty(userJson))
                     return RedirectToAction("Login", "Account");
 
-                //var sessionUser = JsonSerializer.Deserialize<SessionUser>(userJson);
-                //var turnos = await _apiService.GetAsync<List<TurnoViewModel>>($"turnos/Usuario/{sessionUser.IDUsuario}");
+                var sessionUser = JsonSerializer.Deserialize<SessionUser>(userJson);
 
-                // 🚧 Datos de ejemplo (en un caso real vendrían de la BD)
-                var turnos = new List<AppointmentViewModel>
-        {
-            new AppointmentViewModel
-            {
-                Usuario = "Juan Pérez",
-                Fecha = DateTime.Today.AddDays(2),
-                Hora = "10:00",
-                Estado = "Pendiente",
-                Servicios = new List<AppointmentServiceViewModel>
+                // 1. Llamar a la API y deserializar en el NUEVO ViewModel
+                var turnosDesdeApi = await _apiService.GetAsync<List<TurnoUsuarioViewModel>>($"turnos/Usuario/{sessionUser.IDUsuario}");
+
+                // 2. Mapeo SIMPLIFICADO al ViewModel de la VISTA
+                var turnosViewModel = turnosDesdeApi.Select(t => new AppointmentViewModel
                 {
-                    new AppointmentServiceViewModel { Nombre = "Cambio de aceite", Tiempo = 30, Costo = 2500 },
-                    new AppointmentServiceViewModel { Nombre = "Chequeo general", Tiempo = 45, Costo = 3500 }
-                }
-            },
-            new AppointmentViewModel
-            {
-                Usuario = "María Gómez",
-                Fecha = DateTime.Today.AddDays(3),
-                Hora = "14:30",
-                Estado = "Confirmado",
-                Servicios = new List<AppointmentServiceViewModel>
-                {
-                    new AppointmentServiceViewModel { Nombre = "Alineación y balanceo", Tiempo = 40, Costo = 4000 },
-                    new AppointmentServiceViewModel { Nombre = "Cambio de pastillas de freno", Tiempo = 35, Costo = 3200}
-                }
-            } };
-            return View(turnos);
+                    IDTurno = t.IdTurno,
+                    Usuario = sessionUser.Nombre,
+                    Vehiculo = t.Vehiculo,
+                    Fecha = t.FechaHora.Date,
+                    Hora = t.FechaHora.ToString("HH:mm"),
+                    DuracionTotal = t.DuracionTotal, 
+                    Estado = t.Estado, 
+                    Servicios = t.ServiciosNombres.Select(nombre => new AppointmentServiceViewModel
+                    {
+                        Nombre = nombre,
+                        // Nota: Costo y Tiempo individual ya no vienen en este DTO aplanado
+                        Tiempo = 0, // Podrías necesitar ajustar la vista si usabas estos
+                        Costo = 0
+                    }).ToList(),
+                    Observaciones = t.Observaciones
+                }).ToList();
+
+                return View(turnosViewModel);
             }
             catch (Exception ex)
             {
+                Debug.WriteLine($"ERROR en MyAppointments: {ex.Message}");
                 ViewBag.ErrorMessage = "Error al cargar los turnos: " + ex.Message;
-                return View(new List<TurnoViewModel>());
+                return View(new List<AppointmentViewModel>());
+            }
+        }
+        public async Task<IActionResult> RequestService()
+        {
+            var userJson = HttpContext.Session.GetString("User");
+            if (string.IsNullOrEmpty(userJson))
+                return RedirectToAction("Login", "Account");
+
+            try
+            {
+                // Cambiamos el endpoint a "tiposervicios" y el ViewModel
+                var servicios = await _apiService.GetAsync<List<TipoServicioViewModel>>("tiposervicios");
+                return View(servicios); // Pasamos la lista a la vista
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = "Error al cargar los servicios: " + ex.Message;
+                return View(new List<TipoServicioViewModel>()); // Usamos el nuevo ViewModel
             }
         }
 
-        public IActionResult RequestService()
+        public async Task<IActionResult> ScheduleAppointment([FromQuery] List<int> ids)
         {
-            //var userJson = HttpContext.Session.GetString("User");
-            //if (string.IsNullOrEmpty(userJson))
-            //    return RedirectToAction("Login", "Account");
+            var userJson = HttpContext.Session.GetString("User");
+            if (string.IsNullOrEmpty(userJson))
+                return RedirectToAction("Login", "Account");
 
-            return View();
+            var sessionUser = JsonSerializer.Deserialize<SessionUser>(userJson); // Obtener usuario de sesión
+
+            if (ids == null || !ids.Any())
+            {
+                TempData["ErrorMessage"] = "Debe seleccionar al menos un servicio.";
+                return RedirectToAction("RequestService");
+            }
+
+            try
+            {
+                var model = new ScheduleAppointmentViewModel();
+
+                // 1. Crear el querystring para los IDs
+                var idQuery = string.Join("&", ids.Select(id => $"ids={id}"));
+
+                // 2. Tareas en paralelo
+                var serviciosTask = _apiService.GetAsync<List<TipoServicioViewModel>>($"agenda/tiposervicios?{idQuery}");
+                // (NUEVO) Obtener vehículos del usuario
+                var vehiculosTask = _apiService.GetAsync<List<VehiculoViewModel>>($"vehiculos/Usuario/{sessionUser.IDUsuario}");
+
+                await Task.WhenAll(serviciosTask, vehiculosTask); // Esperar ambas tareas
+
+                model.ServiciosSeleccionados = await serviciosTask;
+                model.VehiculosUsuario = await vehiculosTask; // Asignar vehículos al modelo
+
+                if (model.ServiciosSeleccionados == null || !model.ServiciosSeleccionados.Any())
+                {
+                    TempData["ErrorMessage"] = "Error al cargar los servicios seleccionados.";
+                    return RedirectToAction("RequestService");
+                }
+
+                // 3. Obtener días (depende de la duración, así que va después)
+                int duracionTurno = model.DuracionNuevoTurnoMinutos;
+                model.DiasDisponibles = await _apiService.GetAsync<List<DiaDisponibleViewModel>>($"agenda/diasdisponibles?duracionTurno={duracionTurno}");
+
+                if (model.DiasDisponibles == null)
+                {
+                    ViewBag.ErrorMessage = "No se pudieron cargar los días disponibles desde la API.";
+                }
+                else if (!model.DiasDisponibles.Any())
+                {
+                    ViewBag.ErrorMessage = "No se encontraron turnos disponibles para los servicios seleccionados en los próximos 6 meses.";
+                }
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                ViewBag.ErrorMessage = "Error al cargar la agenda: " + ex.Message;
+                var errorModel = new ScheduleAppointmentViewModel(); // Devolver un modelo vacío
+                return View(errorModel);
+            }
         }
 
-        public IActionResult ScheduleAppointment(List<int> ids)
-        {
-            //var userJson = HttpContext.Session.GetString("User");
-            //if (string.IsNullOrEmpty(userJson))
-            //    return RedirectToAction("Login", "Account");
-
-            return View();
-        }
-
-        // POST: /Admin/ConfirmAppointment
         [HttpPost]
-        public IActionResult ConfirmAppointment()
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ScheduleAppointment(ScheduleAppointmentViewModel model, string SelectedFechaHora, int IdVehiculo)
         {
-            // 🚧 Acá va la lógica para confirmar el turno (ej: update en BD)
-            TempData["Message"] = $"El turno fue solicitado exitosamente.";
+            var userJson = HttpContext.Session.GetString("User");
+            if (string.IsNullOrEmpty(userJson))
+                return RedirectToAction("Login", "Account");
 
-            return RedirectToAction("ScheduleAppointment");
+            var sessionUser = JsonSerializer.Deserialize<SessionUser>(userJson);
+
+            // Validar que se haya seleccionado un vehículo (el [Required] no funciona en IdVehiculo)
+            if (IdVehiculo <= 0)
+            {
+                TempData["ErrorMessage"] = "Debe seleccionar un vehículo.";
+                // Recargamos la página reenviando los IDs
+                var idsQueryError = string.Join("&", model.ServiciosSeleccionados.Select(s => "ids=" + s.IdTipoServicio));
+                return RedirectToAction("ScheduleAppointment", new { ids = idsQueryError });
+            }
+
+            try
+            {
+                // 1. Crear el DTO para enviar a la API
+                var createTurnoDto = new
+                {
+                    IDUsuario = sessionUser.IDUsuario,
+                    IDVehiculo = IdVehiculo,
+                    FechaHora = DateTime.Parse(SelectedFechaHora), // El DTO de la API lo recibirá
+                    IDEstadoTurno = 1, // 1 = Pendiente (Según seed.sql)
+                    IdTipoServicios = model.ServiciosSeleccionados.Select(s => s.IdTipoServicio).ToList()
+                };
+
+                // 2. Llamar al POST de TurnoController (Ahora es real)
+                await _apiService.PostAsync<object>("turnos", createTurnoDto);
+
+                // 3. Respuesta (Real)
+                TempData["SuccessMessage"] = $"El turno fue solicitado exitosamente para el {DateTime.Parse(SelectedFechaHora).ToString("dd/MM/yyyy 'a las' HH:mm")}.";
+                return RedirectToAction("MyAppointments");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Error al confirmar el turno: " + ex.Message;
+                // Re-crear el querystring de IDs para recargar la página
+                var idsQuery = string.Join("&", model.ServiciosSeleccionados.Select(s => "ids=" + s.IdTipoServicio));
+                return RedirectToAction("ScheduleAppointment", new { ids = idsQuery });
+            }
         }
 
     }

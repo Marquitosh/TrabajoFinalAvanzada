@@ -1,0 +1,16 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql-container
+    ports:
+      - "1433:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Avanzada@1234"
+      MSSQL_PID: "Developer"
+      MSSQL_RPC_ENCRYPT: "0"
+      MSSQL_TLS_ENABLED: "0"
+    volumes:
+      - ./docker-entrypoint:/docker-entrypoint-initdb.d
+    # NUEVO: Sobreescribe el comando para ejecutar el script de espera/inicialización
+    command: /docker-entrypoint-initdb.d/init.sh
