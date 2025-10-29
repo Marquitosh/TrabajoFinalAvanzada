@@ -37,8 +37,7 @@ namespace AvanzadaAPI.Controllers
         {
             try
             {
-                var usuario = User?.Identity?.Name ?? "Anónimo";
-
+               
                 // Obtener IP Address de forma segura
                 string? ipAddress = null;
                 if (HttpContext?.Connection?.RemoteIpAddress != null)
@@ -56,13 +55,21 @@ namespace AvanzadaAPI.Controllers
                     userAgent = ua.Length > 500 ? ua.Substring(0, 500) : ua;
                 }
 
+                string idUsuario = "Anónimo";
+
+                if (HttpContext?.Request?.Headers != null && 
+                    HttpContext.Request.Headers.TryGetValue("X-Usuario-ID", out var userIdHeader))
+                {
+                    idUsuario = userIdHeader.ToString();
+                }
+
                 var log = new Log
                 {
                     Fecha = DateTime.Now,
                     Nivel = nivel.Length > 20 ? nivel.Substring(0, 20) : nivel,
                     Accion = accion.Length > 100 ? accion.Substring(0, 100) : accion,
                     Descripcion = descripcion.Length > 500 ? descripcion.Substring(0, 497) + "..." : descripcion,
-                    Usuario = usuario.Length > 100 ? usuario.Substring(0, 100) : usuario,
+                    Usuario = idUsuario,
                     IPAddress = ipAddress,
                     UserAgent = userAgent
                 };

@@ -60,14 +60,21 @@ namespace AvanzadaAPI.Services
         {
             try
             {
-                // Determinar el usuario (puede ser "Anónimo" si no hay sesión)
-                var usuario = context.User?.Identity?.Name ?? "Anónimo";
+                // Obtener el ID de usuario desde el header personalizado
+                string idUsuario = "Anónimo";
 
-                // Intentar obtener el email del usuario si está autenticado
-                var emailClaim = context.User?.Claims?.FirstOrDefault(c => c.Type == "Email")?.Value;
-                if (!string.IsNullOrEmpty(emailClaim))
+                if (context.Request.Headers.TryGetValue("X-Usuario-ID", out var userIdHeader))
                 {
-                    usuario = emailClaim;
+                    idUsuario = userIdHeader.ToString();
+                }
+                // Alternativa: también puedes buscar en claims si usas JWT
+                else if (context.User?.Identity?.IsAuthenticated == true)
+                {
+                    var userIdClaim = context.User.Claims.FirstOrDefault(c => c.Type == "sub" || c.Type == "UserId");
+                    if (userIdClaim != null)
+                    {
+                        idUsuario = userIdClaim.Value;
+                    }
                 }
 
                 // Construir la acción (método + ruta)
@@ -117,22 +124,16 @@ namespace AvanzadaAPI.Services
                 var ipAddress = context.Connection.RemoteIpAddress?.ToString();
                 var userAgent = context.Request.Headers["User-Agent"].ToString();
 
-                // Limitar User Agent a 500 caracteres
-                if (userAgent.Length > 500)
-                {
-                    userAgent = userAgent.Substring(0, 497) + "...";
-                }
-
                 // Crear el log
                 var log = new Log
                 {
-                    Fecha = DateTime.Now,
-                    Usuario = usuario.Length > 100 ? usuario.Substring(0, 100) : usuario,
+                    Fecha = DateTime.UtcNow,
+                    Usuario = idUsuario.Length > 100 ? idUsuario.Substring(0, 100) : idUsuario,
                     Accion = accion,
                     Descripcion = descripcion,
                     Nivel = nivel,
                     IPAddress = ipAddress?.Length > 50 ? ipAddress.Substring(0, 50) : ipAddress,
-                    UserAgent = userAgent
+                    UserAgent = userAgent?.Length > 500 ? userAgent.Substring(0, 497) + "..." : userAgent
                 };
 
                 // Guardar en la base de datos

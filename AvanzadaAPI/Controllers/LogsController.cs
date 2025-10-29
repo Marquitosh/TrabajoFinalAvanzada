@@ -16,57 +16,54 @@ namespace AvanzadaAPI.Controllers
             _context = context;
         }
 
-        // GET: api/logs
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Log>>> GetLogs()
+        public async Task<IActionResult> GetLogs(
+            [FromQuery] DateTime? fechaDesde,
+            [FromQuery] DateTime? fechaHasta,
+            [FromQuery] string? nivel,
+            [FromQuery] string? usuario)
         {
             try
             {
-                var logs = await _context.Logs
+                var query = _context.Logs.AsQueryable();
+
+                // Aplicar filtros
+                if (fechaDesde.HasValue)
+                    query = query.Where(l => l.Fecha >= fechaDesde.Value);
+
+                if (fechaHasta.HasValue)
+                {
+                    // Incluir todo el día hasta las 23:59:59
+                    var fechaHastaFin = fechaHasta.Value.Date.AddDays(1).AddSeconds(-1);
+                    query = query.Where(l => l.Fecha <= fechaHastaFin);
+                }
+
+                if (!string.IsNullOrEmpty(nivel))
+                    query = query.Where(l => l.Nivel == nivel);
+
+                if (!string.IsNullOrEmpty(usuario))
+                    query = query.Where(l => l.Usuario.Contains(usuario));
+
+                // Ordenar por fecha descendente (más reciente primero)
+                var logs = await query
                     .OrderByDescending(l => l.Fecha)
+                    .Select(l => new
+                    {
+                        l.IDLog,
+                        l.Fecha,
+                        l.Usuario,
+                        l.Accion,
+                        l.Descripcion,
+                        l.Nivel,
+                        l.IPAddress
+                    })
                     .ToListAsync();
 
                 return Ok(logs);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Error interno: {ex.Message}");
-            }
-        }
-
-        // GET: api/logs/ultimos/10
-        [HttpGet("ultimos/{cantidad}")]
-        public async Task<ActionResult<IEnumerable<Log>>> GetUltimosLogs(int cantidad = 50)
-        {
-            try
-            {
-                var logs = await _context.Logs
-                    .OrderByDescending(l => l.Fecha)
-                    .Take(cantidad)
-                    .ToListAsync();
-
-                return Ok(logs);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error interno: {ex.Message}");
-            }
-        }
-
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Log>>> GetAllLogs()
-        {
-            try
-            {
-                var logs = await _context.Logs
-                    .OrderByDescending(l => l.Fecha)
-                    .ToListAsync();
-
-                return Ok(logs);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error interno: {ex.Message}");
+                return StatusCode(500, new { message = "Error al obtener los logs", error = ex.Message });
             }
         }
 

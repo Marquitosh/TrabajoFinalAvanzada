@@ -152,31 +152,7 @@ namespace AvanzadaWeb.Controllers
             return RedirectToAction("ManageAppointments");
         }
 
-        // GET: /Admin/ManageLog
-        public async Task<IActionResult> ManageLog()
-        {
-            try
-            {
-                var logs = await _apiService.GetAsync<List<Log>>("logs");
-
-                var logsViewModel = logs.Select(l => new LogViewModel
-                {
-                    Fecha = l.Fecha,
-                    Usuario = l.Usuario,
-                    Accion = l.Accion,
-                    Descripcion = l.Descripcion,
-                    Nivel = l.Nivel,
-                    IPAddress = l.IPAddress
-                }).ToList();
-
-                return View(logsViewModel);
-            }
-            catch (Exception ex)
-            {
-                ViewBag.ErrorMessage = "Error al cargar los logs: " + ex.Message;
-                return View(new List<LogViewModel>());
-            }
-        }
+        
 
         // ManageRoles
         public async Task<IActionResult> ManageRoles()
@@ -369,5 +345,52 @@ namespace AvanzadaWeb.Controllers
             // Si llegamos aquí, hubo un error, volvemos a mostrar el formulario con los datos ingresados
             return View(model);
         }
+
+        public async Task<IActionResult> ManageLog(DateTime? fechaDesde, DateTime? fechaHasta, string? nivel, string? usuario)
+        {
+            try
+            {
+                // Construir query string para filtros
+                var queryParams = new List<string>();
+
+                if (fechaDesde.HasValue)
+                    queryParams.Add($"fechaDesde={fechaDesde.Value:yyyy-MM-dd}");
+
+                if (fechaHasta.HasValue)
+                    queryParams.Add($"fechaHasta={fechaHasta.Value:yyyy-MM-dd}");
+
+                if (!string.IsNullOrEmpty(nivel))
+                    queryParams.Add($"nivel={nivel}");
+
+                if (!string.IsNullOrEmpty(usuario))
+                    queryParams.Add($"usuario={usuario}");
+
+                var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
+
+                // Llamar a la API
+                var logs = await _apiService.GetAsync<List<LogViewModel>>($"logs{queryString}");
+
+                // CREAR EL MODELO WRAPPER
+                var model = new LogsIndexViewModel
+                {
+                    Logs = logs ?? new List<LogViewModel>(),
+                    FechaDesde = fechaDesde,
+                    FechaHasta = fechaHasta,
+                    Nivel = nivel,
+                    Usuario = usuario
+                };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                TempData["Message"] = $"Error al cargar los logs: {ex.Message}";
+                return View(new LogsIndexViewModel());
+            }
+        }
+
+
     }
+
+
 }
