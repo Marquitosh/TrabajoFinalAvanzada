@@ -53,6 +53,17 @@ CREATE TABLE HorariosDisponibles (
     DomingoInicio TIME NULL,
     DomingoFin TIME NULL
 );
+CREATE TABLE Marcas (
+    IDMarca INT PRIMARY KEY IDENTITY(1,1),
+    Nombre NVARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE Modelos (
+    IDModelo INT PRIMARY KEY IDENTITY(1,1),
+    Nombre NVARCHAR(50) NOT NULL,
+    IDMarca INT NOT NULL,
+    CONSTRAINT FK_Modelo_Marca FOREIGN KEY (IDMarca) REFERENCES Marcas(IDMarca)
+);
 CREATE TABLE Usuarios ( 
     IDUsuario INT PRIMARY KEY IDENTITY(1,1), 
     Email NVARCHAR(100) UNIQUE NOT NULL, 
@@ -65,14 +76,19 @@ CREATE TABLE Usuarios (
     FechaRegistro DATETIME DEFAULT GETDATE() 
 );
 CREATE TABLE Vehiculos ( 
-    IDVehiculo INT PRIMARY KEY IDENTITY(1,1), 
-    Marca NVARCHAR(50) NOT NULL, 
-    Modelo NVARCHAR(50) NOT NULL, 
+IDVehiculo INT PRIMARY KEY IDENTITY(1,1), 
     Year INT NOT NULL, 
     Patente NVARCHAR(15) UNIQUE NOT NULL, 
     IDCombustible INT FOREIGN KEY REFERENCES TiposCombustible(IDCombustible), 
     Observaciones NVARCHAR(MAX), 
-    IDUsuario INT FOREIGN KEY REFERENCES Usuarios(IDUsuario) 
+    
+    IDUsuario INT FOREIGN KEY REFERENCES Usuarios(IDUsuario), 
+    
+    IDMarca INT NOT NULL,
+    IDModelo INT NOT NULL,
+
+    CONSTRAINT FK_Vehiculo_Marca FOREIGN KEY (IDMarca) REFERENCES Marcas(IDMarca),
+    CONSTRAINT FK_Vehiculo_Modelo FOREIGN KEY (IDModelo) REFERENCES Modelos(IDModelo)
 );
 CREATE TABLE Turno ( 
     IDTurno INT PRIMARY KEY IDENTITY(1,1), 

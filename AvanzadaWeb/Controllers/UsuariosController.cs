@@ -3,18 +3,21 @@ using AvanzadaWeb.Models;
 using AvanzadaWeb.Services;
 using AvanzadaWeb.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace AvanzadaWeb.Controllers
 {
     public class UsuariosController : Controller
     {
         private readonly IApiService _apiService;
+        private readonly ILogger<AdminController> _logger;
 
-        public UsuariosController(IApiService apiService)
+        public UsuariosController(IApiService apiService, ILogger<AdminController> logger)
         {
             _apiService = apiService;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
         public async Task<IActionResult> Index()
         {
@@ -335,7 +338,14 @@ namespace AvanzadaWeb.Controllers
                     return RedirectToAction("Login", "Account");
 
                 var sessionUser = JsonSerializer.Deserialize<SessionUser>(userJson);
-                var vehiculos = await _apiService.GetAsync<List<VehiculoViewModel>>($"vehiculos/Usuario/{sessionUser.IDUsuario}");
+                var userId = sessionUser.IDUsuario;
+                List<VehiculoViewModel> vehiculos = await _apiService.GetAsync<List<VehiculoViewModel>>($"usuarios/{userId}/vehiculos");
+
+                if (vehiculos == null)
+                {
+                    vehiculos = new List<VehiculoViewModel>(); // Ensure it's never null for the view
+                    _logger.LogWarning("API returned null for user {UserId}'s vehicles.", userId);
+                }
 
                 return View(vehiculos);
             }
@@ -431,7 +441,7 @@ namespace AvanzadaWeb.Controllers
                 // 2. Tareas en paralelo
                 var serviciosTask = _apiService.GetAsync<List<TipoServicioViewModel>>($"agenda/tiposervicios?{idQuery}");
                 // (NUEVO) Obtener vehículos del usuario
-                var vehiculosTask = _apiService.GetAsync<List<VehiculoViewModel>>($"vehiculos/Usuario/{sessionUser.IDUsuario}");
+                var vehiculosTask = _apiService.GetAsync<List<VehiculoViewModel>>($"usuarios/{sessionUser.IDUsuario}/vehiculos");
 
                 await Task.WhenAll(serviciosTask, vehiculosTask); // Esperar ambas tareas
 

@@ -611,14 +611,17 @@ namespace AvanzadaAPI.Controllers
             {
                 var vehiculos = await _context.Vehiculos
                     .Where(v => v.IDUsuario == id)
+                    .Include(v => v.Marca)
+                    .Include(v => v.Modelo)
                     .Include(v => v.TipoCombustible)
-                    .Select(v => new VehiculoViewModel
+                    .Select(v => new AvanzadaAPI.Controllers.UsuariosController.VehiculoViewModel 
                     {
                         IDVehiculo = v.IDVehiculo,
-                        Marca = v.Marca,
-                        Modelo = v.Modelo,
+                        Marca = v.Marca.Nombre,
+                        Modelo = v.Modelo.Nombre,
                         Patente = v.Patente,
-                        Year = v.Year
+                        Year = v.Year,
+                        CombustibleDescripcion = v.TipoCombustible != null ? v.TipoCombustible.Descripcion : "No especificado"
                     })
                     .ToListAsync();
                 return Ok(vehiculos);
@@ -627,6 +630,106 @@ namespace AvanzadaAPI.Controllers
             {
                 _logger.LogError(ex, "Error obteniendo vehículos para usuario {ID}", id);
                 return StatusCode(500, "Error interno del servidor");
+            }
+        }
+
+        // POST: api/usuarios/{idUsuario}/vehiculos
+        [HttpPost("{idUsuario}/vehiculos")]
+        public async Task<ActionResult<Vehiculo>> PostVehiculo(int idUsuario, [FromBody] VehiculoCreateDto vehiculoDto)
+        {
+            // El ModelState ahora valida el DTO (que solo tiene IDs)
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Mapeamos del DTO al Modelo de base de datos
+            var vehiculo = new Vehiculo
+            {
+                Year = vehiculoDto.Year,
+                Patente = vehiculoDto.Patente,
+                IDCombustible = vehiculoDto.IDCombustible,
+                Observaciones = vehiculoDto.Observaciones,
+                IDUsuario = idUsuario,
+                IDMarca = vehiculoDto.IDMarca,
+                IDModelo = vehiculoDto.IDModelo
+            };
+
+            _context.Vehiculos.Add(vehiculo);
+            await _context.SaveChangesAsync();
+
+            // NOTA: Tu DTO de lectura (VehiculoDto) necesita ser actualizado
+            // para devolver los nombres de Marca y Modelo, no los objetos.
+            // Por ahora, devolvemos el objeto creado.
+
+            // Asumiendo que tienes un GetVehiculo en este controller
+            // return CreatedAtAction(nameof(GetVehiculo), new { idUsuario = vehiculo.IDUsuario, idVehiculo = vehiculo.IDVehiculo }, vehiculo);
+
+            // Si no lo tienes, simplemente devuelve Ok:
+            return Ok(vehiculo);
+        }
+
+        // Endpoints para recuperación de contraseña
+        [HttpPost("forgot-password")]
+        public async Task<ActionResult> ForgotPassword(ForgotPasswordRequest request)
+        {
+            try
+            {
+                var usuario = await _context.Usuarios
+                    .FirstOrDefaultAsync(u => u.Email == request.Email);
+
+                if (usuario == null)
+                {
+                    return Ok(new { message = "Si el email existe, se enviarán instrucciones de recuperación." });
+                }
+
+                var token = await _tokenService.GeneratePasswordResetTokenAsync(usuario.IDUsuario);
+
+                var emailSent = await _emailService.SendPasswordResetEmailAsync(
+                    usuario.Email,
+                    usuario.NombreCompleto,
+                    token
+                );
+
+                if (!emailSent)
+                {
+                    _logger.LogError("Falló el envío de email de recuperación a {Email}", usuario.Email);
+                    return StatusCode(500, new { message = "Error al enviar el email de recuperación. Por favor, intente más tarde." });
+                }
+
+                _logger.LogInformation("Email de recuperación enviado exitosamente a {Email}", usuario.Email);
+                return Ok(new { message = "Se han enviado instrucciones de recuperación a tu email." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en ForgotPassword para email: {Email}", request.Email);
+                return StatusCode(500, new { message = "Error interno del servidor." });
+            }
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<ActionResult> ResetPassword(ResetPasswordRequest request)
+        {
+            try
+            {
+                var resetToken = await _tokenService.ValidateTokenAsync(request.Token);
+                if (resetToken == null)
+                {
+                    return BadRequest(new { message = "Token inválido o expirado." });
+                }
+
+                resetToken.Usuario.Contraseña = HashPassword(request.NewPassword);
+
+                await _tokenService.MarkTokenAsUsedAsync(request.Token);
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Contraseña actualizada correctamente." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en ResetPassword con token: {Token}", request.Token);
+                return StatusCode(500, new { message = "Error interno del servidor." });
             }
         }
 
@@ -716,6 +819,7 @@ namespace AvanzadaAPI.Controllers
             public string Modelo { get; set; } = string.Empty;
             public string Patente { get; set; } = string.Empty;
             public int Year { get; set; }
+            public string CombustibleDescripcion { get; set; }
         }
     }
 }

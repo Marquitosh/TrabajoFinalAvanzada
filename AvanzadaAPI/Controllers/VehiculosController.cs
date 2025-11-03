@@ -2,6 +2,8 @@
 using AvanzadaAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using AvanzadaAPI.DTOs;
 
 namespace AvanzadaAPI.Controllers
 {
@@ -10,10 +12,12 @@ namespace AvanzadaAPI.Controllers
     public class VehiculosController : ControllerBase
     {
         private readonly AvanzadaContext _context;
+        private readonly ILogger<VehiculosController> _logger;
 
-        public VehiculosController(AvanzadaContext context)
+        public VehiculosController(AvanzadaContext context, ILogger<VehiculosController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         // GET: api/Vehiculos
@@ -55,29 +59,39 @@ namespace AvanzadaAPI.Controllers
 
         // PUT: api/Vehiculos/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutVehiculo(int id, Vehiculo vehiculo)
+        public async Task<IActionResult> PutVehiculo(int id, [FromBody] VehiculoCreateDto vehiculoDto)
         {
-            if (id != vehiculo.IDVehiculo)
+            if (!ModelState.IsValid)
             {
-                return BadRequest();
+                return BadRequest(ModelState);
             }
 
-            _context.Entry(vehiculo).State = EntityState.Modified;
+            var vehiculoEnDb = await _context.Vehiculos.FindAsync(id);
+
+            if (vehiculoEnDb == null)
+            {
+                return NotFound();
+            }
+
+            // Mapear desde el DTO (vehiculoDto) al objeto de la BD (vehiculoEnDb)
+            vehiculoEnDb.Year = vehiculoDto.Year;
+            vehiculoEnDb.Patente = vehiculoDto.Patente;
+            vehiculoEnDb.IDCombustible = vehiculoDto.IDCombustible;
+            vehiculoEnDb.Observaciones = vehiculoDto.Observaciones;
+            vehiculoEnDb.IDMarca = vehiculoDto.IDMarca;
+            vehiculoEnDb.IDModelo = vehiculoDto.IDModelo;
+            // IMPORTANTE: No mapeamos vehiculoEnDb.IDUsuario. Permanece el original.
+
+            _context.Entry(vehiculoEnDb).State = EntityState.Modified;
 
             try
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception ex) // El catch genérico que ya tenías
             {
-                if (!VehiculoExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                _logger.LogError(ex, "Error en SaveChanges en PUT Vehiculo {Id}", id);
+                return StatusCode(500, new { message = "Error interno al guardar." });
             }
 
             return NoContent();
@@ -101,6 +115,13 @@ namespace AvanzadaAPI.Controllers
             if (vehiculo == null)
             {
                 return NotFound();
+            }
+
+            var enUso = await _context.Turnos.AnyAsync(t => t.IDVehiculo == id);
+            if (enUso)
+            {
+                // Devolver un error 409 Conflict (conflicto) con un mensaje claro
+                return Conflict(new { message = "No se puede eliminar el vehículo porque tiene turnos asociados." });
             }
 
             _context.Vehiculos.Remove(vehiculo);

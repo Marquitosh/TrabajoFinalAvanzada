@@ -28,6 +28,9 @@ namespace AvanzadaAPI.Controllers
                 var turnosDto = await _context.Turnos
                     .Include(t => t.Usuario) // Incluir Usuario para NombreCompleto
                     .Include(t => t.Vehiculo)
+                        .ThenInclude(v => v.Marca)
+                    .Include(t => t.Vehiculo)
+                        .ThenInclude(v => v.Modelo)
                     .Include(t => t.EstadoTurno)
                     .Include(t => t.Servicios)
                         .ThenInclude(s => s.TipoServicio)
@@ -36,9 +39,9 @@ namespace AvanzadaAPI.Controllers
                     {
                         IdTurno = t.IDTurno,
                         Usuario = t.Usuario != null ? t.Usuario.NombreCompleto : $"Usuario ID: {t.IDUsuario}", // Obtener nombre
-                        Vehiculo = (t.Vehiculo != null
-                            ? $"{t.Vehiculo.Marca} {t.Vehiculo.Modelo} ({t.Vehiculo.Patente})"
-                            : "Vehículo no especificado"),
+                        Vehiculo = (t.Vehiculo != null && t.Vehiculo.Marca != null && t.Vehiculo.Modelo != null
+                ? $"{t.Vehiculo.Marca.Nombre} {t.Vehiculo.Modelo.Nombre} ({t.Vehiculo.Patente})"
+                : "Vehículo no especificado"),
                         FechaHora = t.FechaHora,
                         Estado = t.EstadoTurno != null ? t.EstadoTurno.Descripcion : "Desconocido",
                         Observaciones = t.Observaciones,
@@ -85,6 +88,9 @@ namespace AvanzadaAPI.Controllers
         {
             var turnosDto = await _context.Turnos
         .Include(t => t.Vehiculo)
+            .ThenInclude(v => v.Marca)
+        .Include(t => t.Vehiculo)
+            .ThenInclude(v => v.Modelo)
         .Include(t => t.EstadoTurno)
         .Include(t => t.Servicios)
             .ThenInclude(s => s.TipoServicio)
@@ -93,8 +99,8 @@ namespace AvanzadaAPI.Controllers
         .Select(t => new TurnoUsuarioDto
         {
             IdTurno = t.IDTurno,
-            Vehiculo = (t.Vehiculo != null
-                ? $"{t.Vehiculo.Marca} {t.Vehiculo.Modelo} ({t.Vehiculo.Patente})"
+            Vehiculo = (t.Vehiculo != null && t.Vehiculo.Marca != null && t.Vehiculo.Modelo != null
+                ? $"{t.Vehiculo.Marca.Nombre} {t.Vehiculo.Modelo.Nombre} ({t.Vehiculo.Patente})"
                 : "Vehículo no especificado"),
             FechaHora = t.FechaHora,
             Estado = t.EstadoTurno != null ? t.EstadoTurno.Descripcion : "Desconocido",

@@ -121,16 +121,12 @@ namespace AvanzadaAPI.Controllers
                 return NotFound();
             }
 
-            // --- Validación Adicional ---
             // Verificar si este tipo de combustible está siendo usado por algún vehículo
             var enUso = await _context.Vehiculos.AnyAsync(v => v.IDCombustible == id);
             if (enUso)
             {
-                _logger.LogWarning("Intento de eliminar TipoCombustible ID: {Id} que está en uso.", id);
-                return Conflict(new { message = "No se puede eliminar este tipo de combustible porque está asignado a uno o más vehículos." });
+                return Conflict(new { message = "No se puede eliminar: Este tipo de combustible está en uso por uno o más vehículos." });
             }
-            // --- Fin Validación ---
-
 
             _context.TiposCombustible.Remove(tipoCombustible);
             await _context.SaveChangesAsync();

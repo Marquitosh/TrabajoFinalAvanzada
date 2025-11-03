@@ -99,20 +99,20 @@ namespace AvanzadaAPI.Controllers
             return new HorariosDisponiblesDto
             {
                 IdHorario = model.IdHorario,
-                LunesInicio = model.LunesInicio?.ToString("HH:mm"),
-                LunesFin = model.LunesFin?.ToString("HH:mm"),
-                MartesInicio = model.MartesInicio?.ToString("HH:mm"),
-                MartesFin = model.MartesFin?.ToString("HH:mm"),
-                MiercolesInicio = model.MiercolesInicio?.ToString("HH:mm"),
-                MiercolesFin = model.MiercolesFin?.ToString("HH:mm"),
-                JuevesInicio = model.JuevesInicio?.ToString("HH:mm"),
-                JuevesFin = model.JuevesFin?.ToString("HH:mm"),
-                ViernesInicio = model.ViernesInicio?.ToString("HH:mm"),
-                ViernesFin = model.ViernesFin?.ToString("HH:mm"),
-                SabadoInicio = model.SabadoInicio?.ToString("HH:mm"),
-                SabadoFin = model.SabadoFin?.ToString("HH:mm"),
-                DomingoInicio = model.DomingoInicio?.ToString("HH:mm"),
-                DomingoFin = model.DomingoFin?.ToString("HH:mm")
+                LunesInicio = model.LunesInicio?.ToString(@"hh\:mm"),
+                LunesFin = model.LunesFin?.ToString(@"hh\:mm"),
+                MartesInicio = model.MartesInicio?.ToString(@"hh\:mm"),
+                MartesFin = model.MartesFin?.ToString(@"hh\:mm"),
+                MiercolesInicio = model.MiercolesInicio?.ToString(@"hh\:mm"),
+                MiercolesFin = model.MiercolesFin?.ToString(@"hh\:mm"),
+                JuevesInicio = model.JuevesInicio?.ToString(@"hh\:mm"),
+                JuevesFin = model.JuevesFin?.ToString(@"hh\:mm"),
+                ViernesInicio = model.ViernesInicio?.ToString(@"hh\:mm"),
+                ViernesFin = model.ViernesFin?.ToString(@"hh\:mm"),
+                SabadoInicio = model.SabadoInicio?.ToString(@"hh\:mm"),
+                SabadoFin = model.SabadoFin?.ToString(@"hh\:mm"),
+                DomingoInicio = model.DomingoInicio?.ToString(@"hh\:mm"),
+                DomingoFin = model.DomingoFin?.ToString(@"hh\:mm")
             };
         }
 

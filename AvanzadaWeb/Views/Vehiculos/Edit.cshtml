@@ -5,29 +5,35 @@
 }
 
 <div class="row">
-    <span> Agustin Pierluigi </span>
     <div class="col-md-8">
         <div class="card">
-            <div class="card-header bg-warning text-dark">
-                <h5><i class="bi bi-pencil-fill"></i> Editar Vehículo</h5>
+            <div class="card-header bg-primary text-white">
+                <h5><i class="bi bi-pencil-fill"></i> @ViewData["Title"]</h5>
             </div>
             <div class="card-body">
                 <form asp-action="Edit" method="post">
-                    <input asp-for="IDVehiculo" type="hidden" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <input type="hidden" asp-for="IDVehiculo" />
 
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label asp-for="Marca" class="form-label">Marca *</label>
-                                <input asp-for="Marca" class="form-control" placeholder="Ej: Toyota" maxlength="50" required>
-                                <span asp-validation-for="Marca" class="text-danger"></span>
+                                <label asp-for="IDMarca" class="form-label">Marca *</label>
+                                <select asp-for="IDMarca" class="form-select" id="marcaSelect"
+                                        asp-items="@Model.MarcasList">
+                                    <option value="">Seleccionar marca...</option>
+                                </select>
+                                <span asp-validation-for="IDMarca" class="text-danger"></span>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label asp-for="Modelo" class="form-label">Modelo *</label>
-                                <input asp-for="Modelo" class="form-control" placeholder="Ej: Corolla" maxlength="50" required>
-                                <span asp-validation-for="Modelo" class="text-danger"></span>
+                                <label asp-for="IDModelo" class="form-label">Modelo *</label>
+                                <select asp-for="IDModelo" class="form-select" id="modeloSelect"
+                                        asp-items="@Model.ModelosList">
+                                </select>
+                                <span asp-validation-for="IDModelo" class="text-danger"></span>
                             </div>
                         </div>
                     </div>
@@ -36,28 +42,24 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label asp-for="Year" class="form-label">Año *</label>
-                                <input asp-for="Year" class="form-control" type="number" min="1990" max="2030" required>
+                                <input asp-for="Year" class="form-control" type="number" min="1990" max="@(DateTime.Now.Year + 1)" required>
                                 <span asp-validation-for="Year" class="text-danger"></span>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label asp-for="Patente" class="form-label">Patente *</label>
-                                <input asp-for="Patente" class="form-control" maxlength="20" required style="text-transform: uppercase;">
+                                <input asp-for="Patente" class="form-control" placeholder="ABC123 o AB123CD" maxlength="7" required style="text-transform: uppercase;">
                                 <span asp-validation-for="Patente" class="text-danger"></span>
+                                <small class="form-text text-muted">Formato: ABC123 o AB123CD</small>
                             </div>
                         </div>
                     </div>
 
                     <div class="mb-3">
                         <label asp-for="IDCombustible" class="form-label">Tipo de Combustible *</label>
-                        <select asp-for="IDCombustible" class="form-select" required>
+                        <select asp-for="IDCombustible" class="form-select" asp-items="@Model.CombustiblesList" required>
                             <option value="">Seleccionar tipo de combustible...</option>
-                            <option value="1">Nafta</option>
-                            <option value="2">Diesel</option>
-                            <option value="3">GNC</option>
-                            <option value="4">Híbrido</option>
-                            <option value="5">Eléctrico</option>
                         </select>
                         <span asp-validation-for="IDCombustible" class="text-danger"></span>
                     </div>
@@ -65,106 +67,24 @@
                     <div class="mb-3">
                         <label asp-for="Observaciones" class="form-label">Observaciones</label>
                         <textarea asp-for="Observaciones" class="form-control" rows="3"
-                                  placeholder="Información adicional sobre el vehículo (opcional)"></textarea>
+                                  placeholder="Información adicional sobre el vehículo" required="false"></textarea>
                         <span asp-validation-for="Observaciones" class="text-danger"></span>
                     </div>
 
                     <div class="d-flex justify-content-between">
                         <a asp-controller="Usuarios" asp-action="Dashboard" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left"></i> Volver a Mis Vehículos
+                            <i class="bi bi-arrow-left"></i> Cancelar
                         </a>
-                        <div>
-                            <button type="button" class="btn btn-outline-danger me-2"
-                                    onclick="confirmarEliminacion(@Model.IDVehiculo, '@Model.Marca @Model.Modelo')">
-                                <i class="bi bi-trash"></i> Eliminar
-                            </button>
-                            <button type="submit" class="btn btn-warning">
-                                <i class="bi bi-check-circle"></i> Actualizar Vehículo
-                            </button>
-                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Guardar Cambios
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Panel de información -->
     <div class="col-md-4">
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                <h6><i class="bi bi-info-circle"></i> Información del Vehículo</h6>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <strong>ID Vehículo:</strong> @Model.IDVehiculo
-                </div>
-                <div class="mb-3">
-                    <strong>Actualmente:</strong><br>
-                    <span class="badge bg-primary">@Model.Marca @Model.Modelo</span><br>
-                    <span class="badge bg-dark mt-1">@Model.Patente</span>
-                </div>
-                <div class="mb-3">
-                    <strong>Año:</strong> @Model.Year<br>
-                    <strong>Combustible:</strong> @Model.CombustibleDescripcion
-                </div>
-                @if (!string.IsNullOrEmpty(Model.Observaciones))
-                {
-                    <div class="mb-3">
-                        <strong>Observaciones actuales:</strong><br>
-                        <small class="text-muted">@Model.Observaciones</small>
-                    </div>
-                }
-            </div>
-        </div>
-
-        <div class="card mt-3">
-            <div class="card-header bg-warning text-dark">
-                <h6><i class="bi bi-exclamation-triangle"></i> Importante</h6>
-            </div>
-            <div class="card-body">
-                <ul class="list-unstyled small">
-                    <li><i class="bi bi-check text-success"></i> Puedes modificar cualquier campo</li>
-                    <li><i class="bi bi-check text-success"></i> Los cambios se guardan inmediatamente</li>
-                    <li><i class="bi bi-exclamation-triangle text-warning"></i> Ten cuidado al cambiar la patente</li>
-                    <li><i class="bi bi-shield-check text-info"></i> El historial se mantiene intacto</li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="card mt-3">
-            <div class="card-header bg-danger text-white">
-                <h6><i class="bi bi-trash"></i> Zona Peligrosa</h6>
-            </div>
-            <div class="card-body">
-                <p class="small">Si ya no necesitas este vehículo, puedes eliminarlo usando el botón "Eliminar" del formulario.</p>
-                <p class="small text-danger"><strong>Atención:</strong> Esta acción no se puede deshacer.</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal de confirmación para eliminar -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirmar Eliminación</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>¿Estás seguro de que deseas eliminar el vehículo <strong><span id="vehiculoNombre"></span></strong>?</p>
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    Esta acción no se puede deshacer y se perderá todo el historial asociado.
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <a id="confirmarEliminar" href="#" class="btn btn-danger">
-                    <i class="bi bi-trash"></i> Eliminar Vehículo
-                </a>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -174,39 +94,95 @@
     }
 
     <script>
-        function confirmarEliminacion(idVehiculo, nombreVehiculo) {
-            document.getElementById('vehiculoNombre').textContent = nombreVehiculo;
-            document.getElementById('confirmarEliminar').href = '@Url.Action("Delete", "Vehiculos")/' + idVehiculo;
+        document.addEventListener('DOMContentLoaded', function() {
 
-            var modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-            modal.show();
-        }
+            const marcaSelect = document.getElementById('marcaSelect');
+            const modeloSelect = document.getElementById('modeloSelect');
 
-        // Convertir patente a mayúsculas automáticamente
-        document.querySelector('input[name="Patente"]').addEventListener('input', function(e) {
-            e.target.value = e.target.value.toUpperCase();
-        });
-
-        // Validar año
-        document.querySelector('input[name="Year"]').addEventListener('change', function(e) {
-            const currentYear = new Date().getFullYear();
-            const inputYear = parseInt(e.target.value);
-
-            if (inputYear > currentYear + 1) {
-                alert('El año no puede ser mayor al próximo año');
-                e.target.value = currentYear;
+            // Función para habilitar/deshabilitar el select de modelos
+            function toggleModeloSelect() {
+                const marcaId = parseInt(marcaSelect.value, 10);
+                if (isNaN(marcaId) || marcaId === 0) {
+                    modeloSelect.disabled = true;
+                    modeloSelect.innerHTML = '<option value="">Primero seleccione una marca...</option>';
+                } else {
+                    modeloSelect.disabled = false;
+                    // No limpiamos las opciones aquí porque el controller ya las cargó
+                }
             }
+
+            // Cargar modelos cuando *cambia* la marca
+            marcaSelect.addEventListener('change', async function() {
+                const marcaId = this.value;
+                modeloSelect.innerHTML = '<option value="">Cargando...</option>'; // Feedback
+                toggleModeloSelect();
+
+                if (!marcaId) return;
+
+                try {
+                    // Llamamos a la acción del VehiculosController (Web)
+                    const response = await fetch(`/Vehiculos/GetModelosPorMarca?idMarca=${marcaId}`);
+                    if (!response.ok) {
+                        throw new Error('Error al cargar los modelos.');
+                    }
+
+                    const modelos = await response.json();
+
+                    // Limpiar opciones
+                    modeloSelect.innerHTML = '<option value="">Seleccionar modelo...</option>';
+
+                    // Agregar los modelos correspondientes
+                    modelos.forEach(modelo => {
+                        const option = document.createElement('option');
+                        option.value = modelo.idModelo; // API devuelve camelCase
+                        option.textContent = modelo.nombre; // API devuelve camelCase
+                        modeloSelect.appendChild(option);
+                    });
+
+                } catch (error) {
+                    console.error('Error en fetch de modelos:', error);
+                    modeloSelect.innerHTML = '<option value="">Error al cargar</option>';
+                }
+            });
+
+            // --- OTROS SCRIPTS (Patente, Año) ---
+
+            const patenteInput = document.querySelector('input[name="Patente"]');
+            patenteInput.addEventListener('input', function(e) {
+                e.target.value = e.target.value.toUpperCase();
+            });
+
+            // Validación de Patente al submit
+            document.querySelector('form').addEventListener('submit', function(e) {
+                const patente = patenteInput.value.trim();
+                const formatoViejo = /^[A-Z]{3}\d{3}$/;
+                const formatoNuevo = /^[A-Z]{2}\d{3}[A-Z]{2}$/;
+
+                if (patente && !formatoViejo.test(patente) && !formatoNuevo.test(patente)) {
+                    e.preventDefault();
+                    alert('Por favor, ingrese una patente válida:\n- ABC123 (formato viejo)\n- AB123CD (formato nuevo)');
+                    patenteInput.focus();
+                }
+            });
+
+            // Ejecutar al cargar la página
+            toggleModeloSelect();
         });
     </script>
 }
 
 <style>
     .form-control:focus, .form-select:focus {
-        border-color: #ffc107;
-        box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
     }
 
     .card-header {
         border-bottom: none;
+    }
+
+    .form-select:disabled {
+        background-color: #e9ecef;
+        cursor: not-allowed;
     }
 </style>

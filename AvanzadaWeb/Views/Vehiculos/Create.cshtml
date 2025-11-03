@@ -5,7 +5,6 @@
 }
 
 <div class="row">
-    <span> Agustin Pierluigi </span>
     <div class="col-md-8">
         <div class="card">
             <div class="card-header bg-primary text-white">
@@ -13,33 +12,26 @@
             </div>
             <div class="card-body">
                 <form asp-action="Create" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label asp-for="Marca" class="form-label">Marca *</label>
-                                <select asp-for="Marca" class="form-select" id="marcaSelect" required>
+                                <label asp-for="IDMarca" class="form-label">Marca *</label>
+                                <select asp-for="IDMarca" class="form-select" id="marcaSelect"
+                                        asp-items="@Model.MarcasList">
                                     <option value="">Seleccionar marca...</option>
-                                    <option value="Toyota">Toyota</option>
-                                    <option value="Volkswagen">Volkswagen</option>
-                                    <option value="Fiat">Fiat</option>
-                                    <option value="Peugeot">Peugeot</option>
-                                    <option value="Ford">Ford</option>
-                                    <option value="Renault">Renault</option>
-                                    <option value="Chevrolet">Chevrolet</option>
-                                    <option value="Citroën">Citroën</option>
-                                    <option value="Jeep">Jeep</option>
-                                    <option value="Nissan">Nissan</option>
                                 </select>
-                                <span asp-validation-for="Marca" class="text-danger"></span>
+                                <span asp-validation-for="IDMarca" class="text-danger"></span>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label asp-for="Modelo" class="form-label">Modelo *</label>
-                                <select asp-for="Modelo" class="form-select" id="modeloSelect" required disabled>
-                                    <option value="">Primero seleccione una marca...</option>
+                                <label asp-for="IDModelo" class="form-label">Modelo *</label>
+                                <select asp-for="IDModelo" class="form-select" id="modeloSelect"
+                                        asp-items="@Model.ModelosList">
                                 </select>
-                                <span asp-validation-for="Modelo" class="text-danger"></span>
+                                <span asp-validation-for="IDModelo" class="text-danger"></span>
                             </div>
                         </div>
                     </div>
@@ -48,7 +40,7 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label asp-for="Year" class="form-label">Año *</label>
-                                <input asp-for="Year" class="form-control" type="number" min="1990" max="2030" placeholder="2023" required>
+                                <input asp-for="Year" class="form-control" type="number" min="1990" max="@(DateTime.Now.Year + 1)" placeholder="2023" required>
                                 <span asp-validation-for="Year" class="text-danger"></span>
                             </div>
                         </div>
@@ -57,20 +49,15 @@
                                 <label asp-for="Patente" class="form-label">Patente *</label>
                                 <input asp-for="Patente" class="form-control" placeholder="ABC123 o AB123CD" maxlength="7" required style="text-transform: uppercase;">
                                 <span asp-validation-for="Patente" class="text-danger"></span>
-                                <small class="form-text text-muted">Formato: ABC123 (viejo) o AB123CD (nuevo)</small>
+                                <small class="form-text text-muted">Formato: ABC123 o AB123CD</small>
                             </div>
                         </div>
                     </div>
 
                     <div class="mb-3">
                         <label asp-for="IDCombustible" class="form-label">Tipo de Combustible *</label>
-                        <select asp-for="IDCombustible" class="form-select" required>
+                        <select asp-for="IDCombustible" class="form-select" asp-items="@Model.CombustiblesList" required>
                             <option value="">Seleccionar tipo de combustible...</option>
-                            <option value="1">Nafta</option>
-                            <option value="2">Diesel</option>
-                            <option value="3">GNC</option>
-                            <option value="4">Híbrido</option>
-                            <option value="5">Eléctrico</option>
                         </select>
                         <span asp-validation-for="IDCombustible" class="text-danger"></span>
                     </div>
@@ -95,48 +82,7 @@
         </div>
     </div>
 
-    <!-- Panel de ayuda -->
     <div class="col-md-4">
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                <h6><i class="bi bi-info-circle"></i> Información</h6>
-            </div>
-            <div class="card-body">
-                <h6>Campos obligatorios</h6>
-                <ul class="list-unstyled small">
-                    <li><i class="bi bi-check text-success"></i> Marca del vehículo</li>
-                    <li><i class="bi bi-check text-success"></i> Modelo</li>
-                    <li><i class="bi bi-check text-success"></i> Año de fabricación</li>
-                    <li><i class="bi bi-check text-success"></i> Patente</li>
-                    <li><i class="bi bi-check text-success"></i> Tipo de combustible</li>
-                </ul>
-
-                <hr>
-
-                <h6>Consejos</h6>
-                <ul class="list-unstyled small">
-                    <li><i class="bi bi-lightbulb text-warning"></i> La patente se convertirá automáticamente a mayúsculas</li>
-                    <li><i class="bi bi-lightbulb text-warning"></i> Patente vieja: ABC123 (3 letras, 3 números)</li>
-                    <li><i class="bi bi-lightbulb text-warning"></i> Patente nueva: AB123CD (2 letras, 3 números, 2 letras)</li>
-                    <li><i class="bi bi-lightbulb text-warning"></i> Las observaciones son opcionales pero útiles</li>
-                    <li><i class="bi bi-lightbulb text-warning"></i> Toda la información se puede editar después</li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="card mt-3">
-            <div class="card-header bg-success text-white">
-                <h6><i class="bi bi-star"></i> Después de registrar</h6>
-            </div>
-            <div class="card-body">
-                <p class="small">Una vez registrado tu vehículo podrás:</p>
-                <ul class="list-unstyled small">
-                    <li><i class="bi bi-calendar-plus text-success"></i> Solicitar turnos</li>
-                    <li><i class="bi bi-tools text-success"></i> Ver historial de servicios</li>
-                    <li><i class="bi bi-bell text-success"></i> Recibir recordatorios</li>
-                </ul>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -146,50 +92,64 @@
     }
 
     <script>
-        // Diccionario de marcas y modelos
-        const vehiculosData = {
-            "Toyota": ["Hilux", "Yaris", "Corolla", "Corolla Cross", "Etios", "SW4", "RAV4", "Innova"],
-            "Volkswagen": ["Gol", "Gol Trend", "Amarok", "Polo", "Taos", "T-Cross", "Nivus", "Suran", "Fox", "Vento"],
-            "Fiat": ["Cronos", "Palio", "Uno", "Strada", "Fiorino", "Punto", "Siena", "Mobi"],
-            "Peugeot": ["208", "2008", "Partner", "308", "307", "408", "504", "405"],
-            "Ford": ["Ranger", "EcoSport", "Ka", "Falcon", "Fiesta", "Mondeo", "Focus", "Ka+"],
-            "Renault": ["Sandero", "Kangoo", "Logan", "Clio", "Scenic", "Fluence", "Stepway", "12"],
-            "Chevrolet": ["Corsa", "Classic", "Onix", "Cruze", "S10", "Tahoe", "Silverado", "Spark", "Meriva", "Captiva"],
-            "Citroën": ["C3", "C4 Cactus", "Berlingo", "Aircross", "C4", "C5", "Spacetourer", "Picasso"],
-            "Jeep": ["Renegade", "Compass", "Grand Cherokee", "Patriot", "Cherokee", "Wrangler", "Liberty", "Wagoneer"],
-            "Nissan": ["Frontier", "Kicks", "Versa", "Sentra", "X-Trail", "Patrol", "March", "Tiida"]
-        };
+        // --- SCRIPT ACTUALIZADO PARA FETCH ---
 
-        // Actualizar modelos cuando cambia la marca
-        document.getElementById('marcaSelect').addEventListener('change', function() {
-            const marca = this.value;
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const marcaSelect = document.getElementById('marcaSelect');
             const modeloSelect = document.getElementById('modeloSelect');
 
-            // Limpiar opciones actuales
-            modeloSelect.innerHTML = '<option value="">Seleccionar modelo...</option>';
-
-            if (marca && vehiculosData[marca]) {
-                // Habilitar el select de modelos
-                modeloSelect.disabled = false;
-
-                // Agregar los modelos correspondientes
-                vehiculosData[marca].forEach(modelo => {
-                    const option = document.createElement('option');
-                    option.value = modelo;
-                    option.textContent = modelo;
-                    modeloSelect.appendChild(option);
-                });
-            } else {
-                modeloSelect.disabled = true;
-                modeloSelect.innerHTML = '<option value="">Primero seleccione una marca...</option>';
+            // Habilitar/deshabilitar modelo select basado en la selección de marca
+            function toggleModeloSelect() {
+                const marcaId = parseInt(marcaSelect.value, 10);
+                if (isNaN(marcaId) || marcaId === 0) {
+                    modeloSelect.disabled = true;
+                    modeloSelect.innerHTML = '<option value="">Primero seleccione una marca...</option>';
+                } else {
+                    modeloSelect.disabled = false;
+                }
             }
-        });
 
-        // Convertir patente a mayúsculas automáticamente
-        const patenteInput = document.querySelector('input[name="Patente"]');
-        patenteInput.addEventListener('input', function(e) {
-            e.target.value = e.target.value.toUpperCase();
-        });
+            // Cargar modelos cuando cambia la marca
+            marcaSelect.addEventListener('change', async function() {
+                const marcaId = this.value;
+                modeloSelect.innerHTML = '<option value="">Cargando...</option>'; // Feedback
+                toggleModeloSelect();
+
+                if (!marcaId) return;
+
+                try {
+                    // Llamamos a la nueva acción del VehiculosController (Web)
+                    const response = await fetch(`/Vehiculos/GetModelosPorMarca?idMarca=${marcaId}`);
+                    if (!response.ok) {
+                        throw new Error('Error al cargar los modelos.');
+                    }
+
+                    const modelos = await response.json();
+
+                    // Limpiar opciones
+                    modeloSelect.innerHTML = '<option value="">Seleccionar modelo...</option>';
+
+                    // Agregar los modelos correspondientes
+                    modelos.forEach(modelo => {
+                        const option = document.createElement('option');
+                        option.value = modelo.idModelo; // API devuelve camelCase
+                        option.textContent = modelo.nombre; // API devuelve camelCase
+                        modeloSelect.appendChild(option);
+                    });
+
+                } catch (error) {
+                    console.error('Error en fetch de modelos:', error);
+                    modeloSelect.innerHTML = '<option value="">Error al cargar</option>';
+                }
+            });
+
+            // --- OTROS SCRIPTS (Patente, Año) ---
+
+            const patenteInput = document.querySelector('input[name="Patente"]');
+            patenteInput.addEventListener('input', function(e) {
+                e.target.value = e.target.value.toUpperCase();
+            });
 
         
 
@@ -198,40 +158,26 @@
             const currentYear = new Date().getFullYear();
             const inputYear = parseInt(e.target.value);
 
-            if (inputYear > currentYear + 1) {
-                alert('El año no puede ser mayor al próximo año');
-                e.target.value = currentYear;
-            }
-        });
+                if (inputYear > currentYear + 1) {
+                    alert('El año no puede ser mayor al próximo año');
+                    e.target.value = currentYear;
+                }
+            });
 
-        // Validación adicional antes de enviar el formulario
-        document.querySelector('form').addEventListener('submit', function(e) {
-            const patente = patenteInput.value.trim();
-            const formatoViejo = /^[A-Z]{3}\d{3}$/;
-            const formatoNuevo = /^[A-Z]{2}\d{3}[A-Z]{2}$/;
+            document.querySelector('form').addEventListener('submit', function(e) {
+                const patente = patenteInput.value.trim();
+                const formatoViejo = /^[A-Z]{3}\d{3}$/;
+                const formatoNuevo = /^[A-Z]{2}\d{3}[A-Z]{2}$/;
 
-            if (!formatoViejo.test(patente) && !formatoNuevo.test(patente)) {
-                e.preventDefault();
-                console.log("validacion adicional");
-                alert('Por favor, ingrese una patente válida:\n- ABC123 (formato viejo)\n- AB123CD (formato nuevo)');
-                patenteInput.focus();
-            }
+                if (patente && !formatoViejo.test(patente) && !formatoNuevo.test(patente)) {
+                    e.preventDefault();
+                    alert('Por favor, ingrese una patente válida:\n- ABC123 (formato viejo)\n- AB123CD (formato nuevo)');
+                    patenteInput.focus();
+                }
+            });
+
+            // Ejecutar al cargar por si se vuelve de un POST fallido
+            toggleModeloSelect();
         });
     </script>
 }
-
-<style>
-    .form-control:focus, .form-select:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-    }
-
-    .card-header {
-        border-bottom: none;
-    }
-
-    .form-select:disabled {
-        background-color: #e9ecef;
-        cursor: not-allowed;
-    }
-</style>

@@ -3,16 +3,19 @@ using AvanzadaWeb.Models;
 using AvanzadaWeb.Services;
 using AvanzadaWeb.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace AvanzadaWeb.Controllers
 {
     public class VehiculosController : Controller
     {
         private readonly IApiService _apiService;
+        private readonly ILogger<VehiculosController> _logger;
 
-        public VehiculosController(IApiService apiService)
+        public VehiculosController(IApiService apiService, ILogger<VehiculosController> logger)
         {
             _apiService = apiService;
+            _logger = logger;
         }
 
         // MÉTODO ORIGINAL RESTAURADO PARA USAR LA BASE DE DATOS
@@ -31,82 +34,168 @@ namespace AvanzadaWeb.Controllers
             }
         }
 
-        public IActionResult Create()
+        // GET: Vehiculos/Create
+        public async Task<IActionResult> Create()
         {
-            return View();
-        }
+            var viewModel = new VehiculoViewModel();
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(VehiculoViewModel model)
-        {
             try
             {
-                Console.WriteLine("=== INICIO Create Vehiculo ===");
+                // Tareas en paralelo para cargar dropdowns
+                var marcasTask = _apiService.GetAsync<List<MarcaViewModel>>("marcas");
+                var combustiblesTask = _apiService.GetAsync<List<TipoCombustibleViewModel>>("tiposcombustible");
 
-                // REMOVER campos que no se envían en el formulario
-                ModelState.Remove("UsuarioNombre");
-                ModelState.Remove("CombustibleDescripcion");
+                await Task.WhenAll(marcasTask, combustiblesTask);
 
-                if (!ModelState.IsValid)
+                var marcas = await marcasTask;
+                var combustibles = await combustiblesTask;
+
+                // Cargar Marcas
+                viewModel.MarcasList = marcas?
+                    .Select(m => new SelectListItem { Value = m.IDMarca.ToString(), Text = m.Nombre })
+                    .OrderBy(m => m.Text)
+                    .ToList() ?? new List<SelectListItem>();
+
+                // Cargar Combustibles
+                viewModel.CombustiblesList = combustibles?
+                    .Select(c => new SelectListItem { Value = c.IdCombustible.ToString(), Text = c.Descripcion }) // Asumiendo IdCombustible y Descripcion
+                    .OrderBy(c => c.Text)
+                    .ToList() ?? new List<SelectListItem>();
+
+                // El dropdown de Modelos se deja vacío, se carga con JS
+                viewModel.ModelosList = new List<SelectListItem>
                 {
-                    Console.WriteLine("ModelState no es válido:");
-                    foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
-                    {
-                        Console.WriteLine($" - {error.ErrorMessage}");
-                    }
-                    return View(model);
-                }
-
-                // Obtener el ID del usuario desde la sesión
-                var userJson = HttpContext.Session.GetString("User");
-                if (string.IsNullOrEmpty(userJson))
-                {
-                    return RedirectToAction("Login", "Account");
-                }
-
-                var sessionUser = System.Text.Json.JsonSerializer.Deserialize<SessionUser>(userJson);
-
-                // Crear el objeto para enviar a la API
-                var vehiculoData = new
-                {
-                    IDUsuario = sessionUser.IDUsuario,
-                    Marca = model.Marca,
-                    Modelo = model.Modelo,
-                    Year = model.Year,
-                    Patente = model.Patente?.ToUpper(),
-                    IDCombustible = model.IDCombustible,
-                    Observaciones = model.Observaciones
+                    new SelectListItem { Value = "", Text = "Primero seleccione una marca..." }
                 };
-
-                Console.WriteLine($"Enviando vehículo a API: {System.Text.Json.JsonSerializer.Serialize(vehiculoData)}");
-
-                // Llamar a la API
-                var response = await _apiService.PostAsync<Vehiculo>("vehiculos", vehiculoData);
-
-                TempData["SuccessMessage"] = "Vehículo registrado correctamente";
-                return RedirectToAction("MyVehicles", "Usuarios");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ERROR en Create Vehiculo: {ex.Message}");
-                TempData["ErrorMessage"] = "Error al registrar el vehículo: " + ex.Message;
-                return View(model);
+                _logger.LogError(ex, "Error al cargar datos para crear vehículo.");
+                TempData["ErrorMessage"] = "Error al cargar datos: " + ex.Message;
+            }
+
+            return View(viewModel);
+        }
+
+        // POST: Vehiculos/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(VehiculoViewModel vehiculo)
+        {
+            var user = HttpContext.Session.GetString("User");
+            if (user == null) return RedirectToAction("Login", "Account");
+            var sessionUser = System.Text.Json.JsonSerializer.Deserialize<SessionUser>(user);
+
+            vehiculo.UsuarioNombre = sessionUser.Nombre;
+
+            // Removemos las listas del ModelState, no son parte del POST
+            ModelState.Remove("MarcasList");
+            ModelState.Remove("ModelosList");
+            ModelState.Remove("CombustiblesList");
+            ModelState.Remove("MarcaNombre");
+            ModelState.Remove("ModeloNombre");
+            ModelState.Remove("CombustibleNombre");
+            ModelState.Remove("Patente"); // Quitamos la validación regex de C# para confiar en la de JS
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // El ApiService enviará el ViewModel con IDMarca, IDModelo, etc.
+                    // La API (VehiculosController) debe estar esperando un DTO con estas propiedades int
+                    await _apiService.PostAsync<VehiculoViewModel>($"usuarios/{sessionUser.IDUsuario}/vehiculos", vehiculo);
+
+                    TempData["SuccessMessage"] = "Vehículo registrado exitosamente.";
+                    return RedirectToAction("MyVehicles", "Usuarios");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error al guardar vehículo.");
+                    TempData["ErrorMessage"] = "Error al guardar: " + ex.Message;
+                }
+            }
+
+            // Si llegamos aquí, hubo un error, recargamos los dropdowns
+            try
+            {
+                var marcas = await _apiService.GetAsync<List<MarcaViewModel>>("marcas");
+                var combustibles = await _apiService.GetAsync<List<TipoCombustibleViewModel>>("tiposcombustible");
+
+                vehiculo.MarcasList = marcas?
+                    .Select(m => new SelectListItem { Value = m.IDMarca.ToString(), Text = m.Nombre })
+                    .OrderBy(m => m.Text)
+                    .ToList() ?? new List<SelectListItem>();
+
+                vehiculo.CombustiblesList = combustibles?
+                    .Select(c => new SelectListItem { Value = c.IdCombustible.ToString(), Text = c.Descripcion })
+                    .OrderBy(c => c.Text)
+                    .ToList() ?? new List<SelectListItem>();
+
+                // Si ya había seleccionado una marca, recargar los modelos
+                if (vehiculo.IDMarca > 0)
+                {
+                    var modelos = await _apiService.GetAsync<List<ModeloViewModel>>($"modelos/marca/{vehiculo.IDMarca}");
+                    vehiculo.ModelosList = modelos?
+                        .Select(m => new SelectListItem { Value = m.IDModelo.ToString(), Text = m.Nombre })
+                        .OrderBy(m => m.Text)
+                        .ToList() ?? new List<SelectListItem>();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error recargando dropdowns en POST fallido.");
+                TempData["ErrorMessage"] = "Error al recargar datos: " + ex.Message;
+            }
+
+            return View(vehiculo);
+        }
+
+        // --- ACCIÓN NUEVA PARA JAVASCRIPT ---
+
+        // GET: /Vehiculos/GetModelosPorMarca?idMarca=5
+        [HttpGet]
+        public async Task<JsonResult> GetModelosPorMarca(int idMarca)
+        {
+            if (idMarca == 0)
+            {
+                return Json(new List<ModeloViewModel>());
+            }
+
+            try
+            {
+                var modelos = await _apiService.GetAsync<List<ModeloViewModel>>($"modelos/marca/{idMarca}");
+                return Json(modelos ?? new List<ModeloViewModel>());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en GetModelosPorMarca (AJAX)");
+                return Json(new { error = ex.Message });
             }
         }
 
+        [HttpDelete]
         public async Task<IActionResult> Delete(int id)
         {
             try
             {
                 await _apiService.DeleteAsync($"vehiculos/{id}");
-                TempData["Success"] = "Vehículo eliminado exitosamente";
+                return Ok(new { message = "Vehículo eliminado exitosamente." });
             }
-            catch (Exception ex)
+            catch (Exception ex) // Capturar la excepción de ApiService
             {
-                TempData["Error"] = "Error al eliminar el vehículo: " + ex.Message;
+                _logger.LogError(ex, "Error al intentar eliminar vehículo ID {Id}", id);
+
+                if (ex.Message.Contains("Conflict") || (ex.InnerException != null && ex.InnerException.Message.Contains("Conflict")))
+                {
+                    // Error 409: Devolver Conflict (409) con el mensaje
+                    return Conflict(new { message = "No se puede eliminar: El vehículo tiene turnos asociados." });
+                }
+                else
+                {
+                    // Otro error: Devolver BadRequest (400)
+                    return BadRequest(new { message = "Error al eliminar el vehículo: " + ex.Message });
+                }
             }
-            return RedirectToAction("MyVehicles", "Usuarios");
         }
 
         // GET: Vehiculos/Edit/5
@@ -114,83 +203,145 @@ namespace AvanzadaWeb.Controllers
         {
             try
             {
-                // Obtener el vehículo de la API
-                var vehiculo = await _apiService.GetAsync<VehiculoViewModel>($"vehiculos/{id}");
+                // 1. Tarea principal: Obtener el vehículo
+                var vehiculoTask = _apiService.GetAsync<VehiculoViewModel>($"vehiculos/{id}");
 
-                if (vehiculo == null)
+                // 2. Tareas secundarias: Cargar listas de Marcas y Combustibles
+                var marcasTask = _apiService.GetAsync<List<MarcaViewModel>>("marcas");
+                var combustiblesTask = _apiService.GetAsync<List<TipoCombustibleViewModel>>("tiposcombustible");
+
+                // Esperar tareas de listas
+                await Task.WhenAll(marcasTask, combustiblesTask);
+
+                // 3. Obtener el vehículo (espera a que termine su tarea)
+                var viewModel = await vehiculoTask;
+                if (viewModel == null)
                 {
-                    TempData["ErrorMessage"] = "Vehículo no encontrado";
-                    return RedirectToAction(nameof(Index));
+                    TempData["ErrorMessage"] = "Vehículo no encontrado.";
+                    return RedirectToAction("Dashboard", "Usuarios");
                 }
 
-                // Cargar los tipos de combustible para el dropdown
-                await CargarTiposCombustible();
+                // 4. Tarea dependiente: Cargar modelos PARA LA MARCA ACTUAL del vehículo
+                var modelosTask = _apiService.GetAsync<List<ModeloViewModel>>($"modelos/marca/{viewModel.IDMarca}");
 
-                return View(vehiculo);
+                // 5. Poblar listas de Marcas y Combustibles (con valor seleccionado)
+                var marcas = await marcasTask;
+                var combustibles = await combustiblesTask;
+
+                viewModel.MarcasList = marcas?
+                    .Select(m => new SelectListItem
+                    {
+                        Value = m.IDMarca.ToString(),
+                        Text = m.Nombre,
+                        Selected = m.IDMarca == viewModel.IDMarca // Marcar como seleccionado
+                    })
+                    .OrderBy(m => m.Text)
+                    .ToList() ?? new List<SelectListItem>();
+
+                viewModel.CombustiblesList = combustibles?
+                    .Select(c => new SelectListItem
+                    {
+                        Value = c.IdCombustible.ToString(), // Asumiendo IdCombustible
+                        Text = c.Descripcion,
+                        Selected = c.IdCombustible == viewModel.IDCombustible // Marcar como seleccionado
+                    })
+                    .OrderBy(c => c.Text)
+                    .ToList() ?? new List<SelectListItem>();
+
+                // 6. Poblar lista de Modelos (esperando la tarea dependiente)
+                var modelos = await modelosTask;
+                viewModel.ModelosList = modelos?
+                    .Select(m => new SelectListItem
+                    {
+                        Value = m.IDModelo.ToString(),
+                        Text = m.Nombre,
+                        Selected = m.IDModelo == viewModel.IDModelo // Marcar como seleccionado
+                    })
+                    .OrderBy(m => m.Text)
+                    .ToList() ?? new List<SelectListItem>();
+
+                return View(viewModel);
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Error al cargar el vehículo: " + ex.Message;
-                return RedirectToAction(nameof(Index));
+                _logger.LogError(ex, "Error al cargar vehículo para editar.");
+                TempData["ErrorMessage"] = "Error al cargar datos: " + ex.Message;
+                return RedirectToAction("Dashboard", "Usuarios");
             }
         }
 
         // POST: Vehiculos/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, VehiculoViewModel model)
+        public async Task<IActionResult> Edit(int id, VehiculoViewModel vehiculo)
         {
+            if (id != vehiculo.IDVehiculo)
+            {
+                return BadRequest();
+            }
+
+            // Removemos las listas del ModelState, no son parte del POST
+            ModelState.Remove("MarcasList");
+            ModelState.Remove("ModelosList");
+            ModelState.Remove("CombustiblesList");
+            ModelState.Remove("MarcaNombre");
+            ModelState.Remove("ModeloNombre");
+            ModelState.Remove("CombustibleNombre");
+            ModelState.Remove("Patente"); // Opcional: si confías en la validación de JS
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // El ApiService enviará el ViewModel con IDMarca, IDModelo, etc.
+                    await _apiService.PutAsync($"vehiculos/{id}", vehiculo);
+
+                    TempData["SuccessMessage"] = "Vehículo actualizado exitosamente.";
+                    return RedirectToAction("MyVehicles", "Usuarios");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error al actualizar vehículo.");
+                    TempData["ErrorMessage"] = "Error al actualizar: " + ex.Message;
+                }
+            }
+
+            // Si llegamos aquí, hubo un error, recargamos los dropdowns
             try
             {
-                if (id != model.IDVehiculo)
-                {
-                    TempData["ErrorMessage"] = "ID del vehículo no coincide";
-                    return View(model);
-                }
+                var marcasTask = _apiService.GetAsync<List<MarcaViewModel>>("marcas");
+                var combustiblesTask = _apiService.GetAsync<List<TipoCombustibleViewModel>>("tiposcombustible");
+                // Cargamos los modelos de la marca que el usuario *intentó* guardar
+                var modelosTask = _apiService.GetAsync<List<ModeloViewModel>>($"modelos/marca/{vehiculo.IDMarca}");
 
-                if (!ModelState.IsValid)
-                {
-                    await CargarTiposCombustible();
-                    return View(model);
-                }
+                await Task.WhenAll(marcasTask, combustiblesTask, modelosTask);
 
-                var vehiculoData = new
-                {
-                    IDVehiculo = model.IDVehiculo,
-                    Marca = model.Marca,
-                    Modelo = model.Modelo,
-                    Year = model.Year,
-                    Patente = model.Patente?.ToUpper(),
-                    IDCombustible = model.IDCombustible,
-                    Observaciones = model.Observaciones
-                };
+                var marcas = await marcasTask;
+                var combustibles = await combustiblesTask;
+                var modelos = await modelosTask;
 
-                await _apiService.PutAsync<VehiculoViewModel>($"vehiculos/{id}", vehiculoData);
+                vehiculo.MarcasList = marcas?
+                    .Select(m => new SelectListItem { Value = m.IDMarca.ToString(), Text = m.Nombre, Selected = m.IDMarca == vehiculo.IDMarca })
+                    .OrderBy(m => m.Text)
+                    .ToList() ?? new List<SelectListItem>();
 
-                TempData["SuccessMessage"] = "Vehículo actualizado correctamente";
-                return RedirectToAction(nameof(Index));
+                vehiculo.CombustiblesList = combustibles?
+                    .Select(c => new SelectListItem { Value = c.IdCombustible.ToString(), Text = c.Descripcion, Selected = c.IdCombustible == vehiculo.IDCombustible })
+                    .OrderBy(c => c.Text)
+                    .ToList() ?? new List<SelectListItem>();
+
+                vehiculo.ModelosList = modelos?
+                    .Select(m => new SelectListItem { Value = m.IDModelo.ToString(), Text = m.Nombre, Selected = m.IDModelo == vehiculo.IDModelo })
+                    .OrderBy(m => m.Text)
+                    .ToList() ?? new List<SelectListItem>();
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Error al actualizar el vehículo: " + ex.Message;
-                await CargarTiposCombustible();
-                return View(model);
+                _logger.LogError(ex, "Error recargando dropdowns en Edit POST fallido.");
+                TempData["ErrorMessage"] = "Error al recargar datos: " + ex.Message;
             }
-        }
 
-        // Método auxiliar para cargar tipos de combustible
-        private async Task CargarTiposCombustible()
-        {
-            try
-            {
-                var tiposCombustible = await _apiService.GetAsync<List<AvanzadaWeb.Models.TipoCombustible>>("tiposcombustible");
-                ViewBag.TiposCombustible = tiposCombustible ?? new List<AvanzadaWeb.Models.TipoCombustible>();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error cargando tipos de combustible: {ex.Message}");
-                ViewBag.TiposCombustible = new List<AvanzadaWeb.Models.TipoCombustible>();
-            }
+            return View(vehiculo);
         }
     }
 }
