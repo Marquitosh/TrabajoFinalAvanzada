@@ -297,7 +297,7 @@ namespace AvanzadaWeb.Controllers
                     await _apiService.PutAsync($"vehiculos/{id}", vehiculo);
 
                     TempData["SuccessMessage"] = "Vehículo actualizado exitosamente.";
-                    return RedirectToAction("Dashboard", "Usuarios"); // O a "MyVehicles"
+                    return RedirectToAction("MyVehicles", "Usuarios");
                 }
                 catch (Exception ex)
                 {

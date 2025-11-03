@@ -861,8 +861,17 @@
                         location.reload();
                         return;
                     } else {
-                        const error = await response.json().catch(() => ({ message: response.statusText }));
-                        alert(`Error al eliminar marca: ${error.message || "Error desconocido"}`);
+                        let errorMessage = "Error desconocido";
+                        try {
+                            // Intentar leer JSON (ideal si AdminController reenvía el JSON de la API)
+                            const error = await response.json();
+                            errorMessage = error.message || response.statusText;
+                        } catch (e) {
+                            // Fallback si AdminController envía texto plano
+                            errorMessage = await response.text();
+                            if (!errorMessage) errorMessage = response.statusText;
+                        }
+                        alert(`Error al eliminar marca: ${errorMessage}`);
                     }
                 } catch (error) {
                     console.error("Error en deleteMarca:", error);
@@ -979,8 +988,15 @@
                         location.reload();
                         return;
                     } else {
-                        const error = await response.json().catch(() => ({ message: response.statusText }));
-                        alert(`Error al eliminar modelo: ${error.message || "Error desconocido"}`);
+                        let errorMessage = "Error desconocido";
+                        try {
+                            const error = await response.json();
+                            errorMessage = error.message || response.statusText;
+                        } catch (e) {
+                            errorMessage = await response.text();
+                            if (!errorMessage) errorMessage = response.statusText;
+                        }
+                        alert(`Error al eliminar modelo: ${errorMessage}`);
                     }
                 } catch (error) {
                     console.error("Error en deleteModelo:", error);
