@@ -103,6 +103,13 @@ namespace AvanzadaAPI.Controllers
                 return NotFound();
             }
 
+            var enUso = await _context.Turnos.AnyAsync(t => t.IDVehiculo == id);
+            if (enUso)
+            {
+                // Devolver un error 409 Conflict (conflicto) con un mensaje claro
+                return Conflict(new { message = "No se puede eliminar el vehículo porque tiene turnos asociados." });
+            }
+
             _context.Vehiculos.Remove(vehiculo);
             await _context.SaveChangesAsync();
 

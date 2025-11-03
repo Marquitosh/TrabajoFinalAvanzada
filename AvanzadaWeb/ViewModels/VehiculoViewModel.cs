@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace AvanzadaWeb.ViewModels
 {
@@ -6,11 +7,13 @@ namespace AvanzadaWeb.ViewModels
     {
         public int IDVehiculo { get; set; }
 
-        [Required(ErrorMessage = "La marca es requerida")]
-        public string Marca { get; set; } = string.Empty;
+        [Required(ErrorMessage = "La marca es obligatoria.")]
+        [Display(Name = "Marca")]
+        public int IDMarca { get; set; }
 
-        [Required(ErrorMessage = "El modelo es requerido")]
-        public string Modelo { get; set; } = string.Empty;
+        [Required(ErrorMessage = "El modelo es obligatorio.")]
+        [Display(Name = "Modelo")]
+        public int IDModelo { get; set; }
 
         [Required(ErrorMessage = "El año es requerido")]
         [Range(1990, 2030, ErrorMessage = "El año debe estar entre 1990 y 2030")]
@@ -31,8 +34,16 @@ namespace AvanzadaWeb.ViewModels
         public string? NuevoCombustible { get; set; }
 
         // Propiedades para mostrar
+        public string? Marca { get; set; }
+        public string? Modelo { get; set; }
         public string? CombustibleDescripcion { get; set; }
+
         public string? UsuarioNombre { get; set; }
         public bool EsAdmin { get; set; }
+
+        // --- Listas para los Dropdowns ---
+        public IEnumerable<SelectListItem> MarcasList { get; set; } = new List<SelectListItem>();
+        public IEnumerable<SelectListItem> ModelosList { get; set; } = new List<SelectListItem>();
+        public IEnumerable<SelectListItem> CombustiblesList { get; set; } = new List<SelectListItem>();
     }
 }

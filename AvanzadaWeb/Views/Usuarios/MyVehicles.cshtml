@@ -9,6 +9,55 @@
         System.Text.Json.JsonSerializer.Deserialize<AvanzadaWeb.Models.SessionUser>(userJson) : null;
 }
 
+<style>
+    #loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 9998;
+        display: none;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        z-index: 9999;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
 <div class="row">
     <span> Agustin Pierluigi </span>
     <div class="col-md-12">
@@ -49,6 +98,14 @@
                                 </div>
                             </div>
                             <div class="row mb-2">
+                                <div class="col-4"><strong>Marca:</strong></div>
+                                <div class="col-8">@vehiculo.Marca</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-4"><strong>Modelo:</strong></div>
+                                <div class="col-8">@vehiculo.Modelo</div>
+                            </div>
+                            <div class="row mb-2">
                                 <div class="col-4"><strong>Año:</strong></div>
                                 <div class="col-8">@vehiculo.Year</div>
                             </div>
@@ -75,8 +132,7 @@
                                class="btn btn-outline-warning btn-sm">
                                 <i class="bi bi-pencil"></i> Editar
                             </a>
-                            <button type="button" class="btn btn-outline-danger btn-sm"
-                                    onclick="confirmarEliminacion(@vehiculo.IDVehiculo, '@vehiculo.Marca @vehiculo.Modelo')">
+                            <button type="button" id="confirmarEliminarBtn" onclick="ejecutarEliminacion()" class="btn btn-danger">
                                 <i class="bi bi-trash"></i> Eliminar
                             </button>
                         </div>
@@ -200,12 +256,61 @@ else
 
 @section Scripts {
     <script>
-        function confirmarEliminacion(idVehiculo, nombreVehiculo) {
-            document.getElementById('vehiculoNombre').textContent = nombreVehiculo;
-            document.getElementById('confirmarEliminar').href = '@Url.Action("Delete", "Vehiculos")/' + idVehiculo;
+        // --- Loader ---
+        const loader = document.getElementById('loading-overlay');
+        function showLoader() { if (loader) loader.style.display = 'flex'; }
+        function hideLoader() { if (loader) loader.style.display = 'none'; }
 
-            var modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-            modal.show();
+        // --- Lógica del Modal ---
+        let vehiculoIdParaEliminar = 0;
+        const deleteModalEl = document.getElementById('deleteModal');
+        const deleteModal = new bootstrap.Modal(deleteModalEl);
+
+        // 1. Esta función solo abre el modal y guarda el ID
+        function confirmarEliminacion(idVehiculo, nombreVehiculo) {
+            vehiculoIdParaEliminar = idVehiculo;
+            document.getElementById('vehiculoNombre').textContent = nombreVehiculo;
+
+            // Limpiar el href del botón viejo (por si acaso)
+            // const oldButton = document.getElementById('confirmarEliminar');
+            // if(oldButton) oldButton.href = "#";
+
+            deleteModal.show();
+        }
+
+        // 2. Esta función es llamada por el nuevo botón y hace el trabajo
+        async function ejecutarEliminacion() {
+            if (vehiculoIdParaEliminar <= 0) return;
+
+            showLoader();
+
+            try {
+                const response = await fetch(`/Vehiculos/Delete/${vehiculoIdParaEliminar}`, {
+                    method: 'DELETE'
+                    // NOTA: Si tuvieras [ValidateAntiForgeryToken] en el [HttpDelete] del controller,
+                    // necesitarías añadir un token a la página y enviarlo en los headers aquí.
+                });
+
+                if (response.ok) {
+                    // Éxito, recargar la página para ver el cambio
+                    // (TempData no se usará, pero podemos forzarlo si quisiéramos)
+                    location.reload();
+                    return; // El loader desaparece con la recarga
+                } else {
+                    // Error (409 Conflict, 400 BadRequest, etc.)
+                    const error = await response.json().catch(() => ({ message: response.statusText }));
+                    alert(`Error al eliminar: ${error.message || "Error desconocido"}`);
+                }
+
+            } catch (error) {
+                console.error("Error en fetch DELETE:", error);
+                alert('Error de red al eliminar el vehículo.');
+            } finally {
+                // Ocultar loader y modal en caso de error
+                hideLoader();
+                deleteModal.hide();
+                vehiculoIdParaEliminar = 0; // Resetear
+            }
         }
     </script>
 }

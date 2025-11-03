@@ -127,15 +127,12 @@ namespace AvanzadaAPI.Controllers
                 return NotFound();
             }
 
-            // --- Validación Adicional ---
             // Verificar si este tipo de servicio está siendo usado en algún Turno (a través de la tabla Servicio)
             var enUso = await _context.Servicios.AnyAsync(s => s.IdTipoServicio == id);
             if (enUso)
             {
-                _logger.LogWarning("Intento de eliminar TipoServicio ID: {Id} que está en uso.", id);
-                return Conflict(new { message = "No se puede eliminar este tipo de servicio porque está asignado a uno o más turnos." });
+                return Conflict(new { message = "No se puede eliminar: Este tipo de servicio está en uso por uno o más turnos." });
             }
-            // --- Fin Validación ---
 
             _context.TiposServicio.Remove(tipoServicio);
             await _context.SaveChangesAsync();

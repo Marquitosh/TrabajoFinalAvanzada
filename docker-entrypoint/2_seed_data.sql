@@ -81,6 +81,95 @@ VALUES
 SET IDENTITY_INSERT dbo.HorariosDisponibles OFF;
 GO
 
+-- ====================================================
+-- SEED PARA Marcas y Modelos
+-- ====================================================
+BEGIN TRANSACTION;
+DECLARE @MarcaID INT;
+
+-- Toyota
+IF NOT EXISTS (SELECT 1 FROM Marcas WHERE Nombre = 'Toyota')
+BEGIN
+    INSERT INTO Marcas (Nombre) VALUES ('Toyota');
+    SET @MarcaID = SCOPE_IDENTITY();
+    INSERT INTO Modelos (IDMarca, Nombre) VALUES (@MarcaID, 'Hilux'), (@MarcaID, 'Yaris'), (@MarcaID, 'Corolla'), (@MarcaID, 'Corolla Cross'), (@MarcaID, 'Etios'), (@MarcaID, 'SW4'), (@MarcaID, 'RAV4'), (@MarcaID, 'Innova');
+END
+
+-- Volkswagen
+IF NOT EXISTS (SELECT 1 FROM Marcas WHERE Nombre = 'Volkswagen')
+BEGIN
+    INSERT INTO Marcas (Nombre) VALUES ('Volkswagen');
+    SET @MarcaID = SCOPE_IDENTITY();
+    INSERT INTO Modelos (IDMarca, Nombre) VALUES (@MarcaID, 'Gol'), (@MarcaID, 'Gol Trend'), (@MarcaID, 'Amarok'), (@MarcaID, 'Polo'), (@MarcaID, 'Taos'), (@MarcaID, 'T-Cross'), (@MarcaID, 'Nivus'), (@MarcaID, 'Suran'), (@MarcaID, 'Fox'), (@MarcaID, 'Vento');
+END
+
+-- Fiat
+IF NOT EXISTS (SELECT 1 FROM Marcas WHERE Nombre = 'Fiat')
+BEGIN
+    INSERT INTO Marcas (Nombre) VALUES ('Fiat');
+    SET @MarcaID = SCOPE_IDENTITY();
+    INSERT INTO Modelos (IDMarca, Nombre) VALUES (@MarcaID, 'Cronos'), (@MarcaID, 'Palio'), (@MarcaID, 'Uno'), (@MarcaID, 'Strada'), (@MarcaID, 'Fiorino'), (@MarcaID, 'Punto'), (@MarcaID, 'Siena'), (@MarcaID, 'Mobi');
+END
+
+-- Peugeot
+IF NOT EXISTS (SELECT 1 FROM Marcas WHERE Nombre = 'Peugeot')
+BEGIN
+    INSERT INTO Marcas (Nombre) VALUES ('Peugeot');
+    SET @MarcaID = SCOPE_IDENTITY();
+    INSERT INTO Modelos (IDMarca, Nombre) VALUES (@MarcaID, '208'), (@MarcaID, '2008'), (@MarcaID, 'Partner'), (@MarcaID, '308'), (@MarcaID, '307'), (@MarcaID, '408'), (@MarcaID, '504'), (@MarcaID, '405');
+END
+
+-- Ford
+IF NOT EXISTS (SELECT 1 FROM Marcas WHERE Nombre = 'Ford')
+BEGIN
+    INSERT INTO Marcas (Nombre) VALUES ('Ford');
+    SET @MarcaID = SCOPE_IDENTITY();
+    INSERT INTO Modelos (IDMarca, Nombre) VALUES (@MarcaID, 'Ranger'), (@MarcaID, 'EcoSport'), (@MarcaID, 'Ka'), (@MarcaID, 'Falcon'), (@MarcaID, 'Fiesta'), (@MarcaID, 'Mondeo'), (@MarcaID, 'Focus'), (@MarcaID, 'Ka+');
+END
+
+-- Renault
+IF NOT EXISTS (SELECT 1 FROM Marcas WHERE Nombre = 'Renault')
+BEGIN
+    INSERT INTO Marcas (Nombre) VALUES ('Renault');
+    SET @MarcaID = SCOPE_IDENTITY();
+    INSERT INTO Modelos (IDMarca, Nombre) VALUES (@MarcaID, 'Sandero'), (@MarcaID, 'Kangoo'), (@MarcaID, 'Logan'), (@MarcaID, 'Clio'), (@MarcaID, 'Scenic'), (@MarcaID, 'Fluence'), (@MarcaID, 'Stepway'), (@MarcaID, '12');
+END
+
+-- Chevrolet
+IF NOT EXISTS (SELECT 1 FROM Marcas WHERE Nombre = 'Chevrolet')
+BEGIN
+    INSERT INTO Marcas (Nombre) VALUES ('Chevrolet');
+    SET @MarcaID = SCOPE_IDENTITY();
+    INSERT INTO Modelos (IDMarca, Nombre) VALUES (@MarcaID, 'Corsa'), (@MarcaID, 'Classic'), (@MarcaID, 'Onix'), (@MarcaID, 'Cruze'), (@MarcaID, 'S10'), (@MarcaID, 'Tahoe'), (@MarcaID, 'Silverado'), (@MarcaID, 'Spark'), (@MarcaID, 'Meriva'), (@MarcaID, 'Captiva');
+END
+
+-- Citroën
+IF NOT EXISTS (SELECT 1 FROM Marcas WHERE Nombre = 'Citroën')
+BEGIN
+    INSERT INTO Marcas (Nombre) VALUES ('Citroën');
+    SET @MarcaID = SCOPE_IDENTITY();
+    INSERT INTO Modelos (IDMarca, Nombre) VALUES (@MarcaID, 'C3'), (@MarcaID, 'C4 Cactus'), (@MarcaID, 'Berlingo'), (@MarcaID, 'Aircross'), (@MarcaID, 'C4'), (@MarcaID, 'C5'), (@MarcaID, 'Spacetourer'), (@MarcaID, 'Picasso');
+END
+
+-- Jeep
+IF NOT EXISTS (SELECT 1 FROM Marcas WHERE Nombre = 'Jeep')
+BEGIN
+    INSERT INTO Marcas (Nombre) VALUES ('Jeep');
+    SET @MarcaID = SCOPE_IDENTITY();
+    INSERT INTO Modelos (IDMarca, Nombre) VALUES (@MarcaID, 'Renegade'), (@MarcaID, 'Compass'), (@MarcaID, 'Grand Cherokee'), (@MarcaID, 'Patriot'), (@MarcaID, 'Cherokee'), (@MarcaID, 'Wrangler'), (@MarcaID, 'Liberty'), (@MarcaID, 'Wagoneer');
+END
+
+-- Nissan
+IF NOT EXISTS (SELECT 1 FROM Marcas WHERE Nombre = 'Nissan')
+BEGIN
+    INSERT INTO Marcas (Nombre) VALUES ('Nissan');
+    SET @MarcaID = SCOPE_IDENTITY();
+    INSERT INTO Modelos (IDMarca, Nombre) VALUES (@MarcaID, 'Frontier'), (@MarcaID, 'Kicks'), (@MarcaID, 'Versa'), (@MarcaID, 'Sentra'), (@MarcaID, 'X-Trail'), (@MarcaID, 'Patrol'), (@MarcaID, 'March'), (@MarcaID, 'Tiida');
+END
+
+COMMIT TRANSACTION;
+GO
+
 --------------------------------------
 -- INSERTAR Usuarios de Prueba
 --------------------------------------
@@ -114,20 +203,35 @@ GO
 -- 1. Vehiculo para Admin (IDUsuario = 1)
 IF NOT EXISTS (SELECT 1 FROM Vehiculos WHERE Patente = 'ADM123')
 BEGIN
-    INSERT INTO Vehiculos (IDVehiculo, Marca, Modelo, Year, Patente, IDCombustible, IDUsuario)
-    VALUES (1, 'Ford', 'Ranger', 2022, 'ADM123', 3, 1); -- IDCombustible 3 = Diesel, IDUsuario 1 = Admin
+    INSERT INTO Vehiculos (IDVehiculo, IDMarca, IDModelo, Year, Patente, IDCombustible, IDUsuario)
+    VALUES (
+        1, 
+        (SELECT IDMarca FROM Marcas WHERE Nombre = 'Ford'), 
+        (SELECT IDModelo FROM Modelos WHERE Nombre = 'Ranger' AND IDMarca = (SELECT IDMarca FROM Marcas WHERE Nombre = 'Ford')), 
+        2022, 
+        'ADM123', 
+        (SELECT IDCombustible FROM TiposCombustible WHERE Descripcion = 'Diesel'), 
+        1 -- IDUsuario 1 = Admin
+    );
 END
 
 -- 2. Vehiculo para User (IDUsuario = 2)
 IF NOT EXISTS (SELECT 1 FROM Vehiculos WHERE Patente = 'USR456')
 BEGIN
-    INSERT INTO Vehiculos (IDVehiculo, Marca, Modelo, Year, Patente, IDCombustible, IDUsuario)
-    VALUES (2, 'Volkswagen', 'Golf', 2019, 'USR456', 1, 2); -- IDCombustible 1 = Nafta Premium, IDUsuario 2 = User
+    INSERT INTO Vehiculos (IDVehiculo, IDMarca, IDModelo, Year, Patente, IDCombustible, IDUsuario)
+    VALUES (
+        2, 
+        (SELECT IDMarca FROM Marcas WHERE Nombre = 'Volkswagen'), 
+        (SELECT IDModelo FROM Modelos WHERE Nombre = 'Gol' AND IDMarca = (SELECT IDMarca FROM Marcas WHERE Nombre = 'Volkswagen')), 
+        2019, 
+        'USR456', 
+        (SELECT IDCombustible FROM TiposCombustible WHERE Descripcion = 'Nafta Premium'), 
+        2 -- IDUsuario 2 = User
+    );
 END
 GO
 SET IDENTITY_INSERT dbo.Vehiculos OFF;
 GO
-
 --------------------------------------
 -- INSERTAR Turnos y Servicios de Prueba
 --------------------------------------

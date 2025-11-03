@@ -2,7 +2,7 @@
 
 @{
     ViewData["Title"] = "Configuración del Sistema";
-    Layout = "_UserLayout"; // O el layout que uses para el Admin
+    Layout = "_UserLayout";
 }
 
 <h2><i class="bi bi-gear-fill"></i> @ViewData["Title"]</h2>
@@ -30,6 +30,41 @@
     </div>
 }
 
+<style>
+    #loading-overlay {
+        position: fixed; /* Cubre toda la pantalla */
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro semitransparente */
+        z-index: 9998; /* Asegura que esté por encima de todo (excepto el spinner) */
+        display: none; /* Oculto por defecto */
+        justify-content: center; /* Centrado horizontal */
+        align-items: center; /* Centrado vertical */
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3; /* Círculo gris claro */
+        border-top: 5px solid #3498db; /* Borde superior azul (el que gira) */
+        border-radius: 50%;
+        animation: spin 1s linear infinite; /* Animación de rotación */
+        z-index: 9999;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
 <div class="card shadow-sm mb-4">
     <div class="card-header">
         <h5 class="mb-0">Horarios de Atención</h5>
@@ -40,35 +75,117 @@
             <input type="hidden" asp-for="IdHorario" />
 
             <div class="row g-3">
-                @{
-                    var dias = new[] {
-                                ("Lunes", nameof(Model.LunesInicio), nameof(Model.LunesFin)),
-                                ("Martes", nameof(Model.MartesInicio), nameof(Model.MartesFin)),
-                                ("Miércoles", nameof(Model.MiercolesInicio), nameof(Model.MiercolesFin)),
-                                ("Jueves", nameof(Model.JuevesInicio), nameof(Model.JuevesFin)),
-                                ("Viernes", nameof(Model.ViernesInicio), nameof(Model.ViernesFin)),
-                                ("Sábado", nameof(Model.SabadoInicio), nameof(Model.SabadoFin)),
-                                ("Domingo", nameof(Model.DomingoInicio), nameof(Model.DomingoFin))
-                                };
-                }
-                @foreach (var (nombreDia, Inicio, Fin) in dias)
-                {
-                    <div class="col-md-6 col-lg-4">
-                        <fieldset class="border p-3 rounded">
-                            <legend class="fs-6 px-2">@nombreDia</legend>
-                            <div class="mb-2">
-                                <label asp-for="@Inicio" class="form-label"></label>
-                                <input asp-for="@Inicio" class="form-control" type="time" />
-                                <span asp-validation-for="@Inicio" class="text-danger"></span>
-                            </div>
-                            <div>
-                                <label asp-for="@Fin" class="form-label"></label>
-                                <input asp-for="@Fin" class="form-control" type="time" />
-                                <span asp-validation-for="@Fin" class="text-danger"></span>
-                            </div>
-                        </fieldset>
-                    </div>
-                }
+                <div class="col-md-6 col-lg-4">
+                    <fieldset class="border p-3 rounded">
+                        <legend class="fs-6 px-2">Lunes</legend>
+                        <div class="mb-2">
+                            <label asp-for="LunesInicio" class="form-label"></label>
+                            <input asp-for="LunesInicio" class="form-control" type="time" />
+                            <span asp-validation-for="LunesInicio" class="text-danger"></span>
+                        </div>
+                        <div>
+                            <label asp-for="LunesFin" class="form-label"></label>
+                            <input asp-for="LunesFin" class="form-control" type="time" />
+                            <span asp-validation-for="LunesFin" class="text-danger"></span>
+                        </div>
+                    </fieldset>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <fieldset class="border p-3 rounded">
+                        <legend class="fs-6 px-2">Martes</legend>
+                        <div class="mb-2">
+                            <label asp-for="MartesInicio" class="form-label"></label>
+                            <input asp-for="MartesInicio" class="form-control" type="time" />
+                            <span asp-validation-for="MartesInicio" class="text-danger"></span>
+                        </div>
+                        <div>
+                            <label asp-for="MartesFin" class="form-label"></label>
+                            <input asp-for="MartesFin" class="form-control" type="time" />
+                            <span asp-validation-for="MartesFin" class="text-danger"></span>
+                        </div>
+                    </fieldset>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <fieldset class="border p-3 rounded">
+                        <legend class="fs-6 px-2">Miércoles</legend>
+                        <div class="mb-2">
+                            <label asp-for="MiercolesInicio" class="form-label"></label>
+                            <input asp-for="MiercolesInicio" class="form-control" type="time" />
+                            <span asp-validation-for="MiercolesInicio" class="text-danger"></span>
+                        </div>
+                        <div>
+                            <label asp-for="MiercolesFin" class="form-label"></label>
+                            <input asp-for="MiercolesFin" class="form-control" type="time" />
+                            <span asp-validation-for="MiercolesFin" class="text-danger"></span>
+                        </div>
+                    </fieldset>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <fieldset class="border p-3 rounded">
+                        <legend class="fs-6 px-2">Jueves</legend>
+                        <div class="mb-2">
+                            <label asp-for="JuevesInicio" class="form-label"></label>
+                            <input asp-for="JuevesInicio" class="form-control" type="time" />
+                            <span asp-validation-for="JuevesInicio" class="text-danger"></span>
+                        </div>
+                        <div>
+                            <label asp-for="JuevesFin" class="form-label"></label>
+                            <input asp-for="JuevesFin" class="form-control" type="time" />
+                            <span asp-validation-for="JuevesFin" class="text-danger"></span>
+                        </div>
+                    </fieldset>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <fieldset class="border p-3 rounded">
+                        <legend class="fs-6 px-2">Viernes</legend>
+                        <div class="mb-2">
+                            <label asp-for="ViernesInicio" class="form-label"></label>
+                            <input asp-for="ViernesInicio" class="form-control" type="time" />
+                            <span asp-validation-for="ViernesInicio" class="text-danger"></span>
+                        </div>
+                        <div>
+                            <label asp-for="ViernesFin" class="form-label"></label>
+                            <input asp-for="ViernesFin" class="form-control" type="time" />
+                            <span asp-validation-for="ViernesFin" class="text-danger"></span>
+                        </div>
+                    </fieldset>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <fieldset class="border p-3 rounded">
+                        <legend class="fs-6 px-2">Sábado</legend>
+                        <div class="mb-2">
+                            <label asp-for="SabadoInicio" class="form-label"></label>
+                            <input asp-for="SabadoInicio" class="form-control" type="time" />
+                            <span asp-validation-for="SabadoInicio" class="text-danger"></span>
+                        </div>
+                        <div>
+                            <label asp-for="SabadoFin" class="form-label"></label>
+                            <input asp-for="SabadoFin" class="form-control" type="time" />
+                            <span asp-validation-for="SabadoFin" class="text-danger"></span>
+                        </div>
+                    </fieldset>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <fieldset class="border p-3 rounded">
+                        <legend class="fs-6 px-2">Domingo</legend>
+                        <div class="mb-2">
+                            <label asp-for="DomingoInicio" class="form-label"></label>
+                            <input asp-for="DomingoInicio" class="form-control" type="time" />
+                            <span asp-validation-for="DomingoInicio" class="text-danger"></span>
+                        </div>
+                        <div>
+                            <label asp-for="DomingoFin" class="form-label"></label>
+                            <input asp-for="DomingoFin" class="form-control" type="time" />
+                            <span asp-validation-for="DomingoFin" class="text-danger"></span>
+                        </div>
+                    </fieldset>
+                </div>
             </div>
             <hr />
             <div class="mt-3">
@@ -121,6 +238,214 @@
         {
             <div class="alert alert-info mb-0">No hay tipos de combustible definidos.</div>
         }
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Marcas de Vehículos</h5>
+        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalAddMarca">
+            <i class="bi bi-plus-circle"></i> Nueva Marca
+        </button>
+    </div>
+    <div class="card-body">
+        @if (Model.Marcas.Any())
+        {
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th style="width: 120px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Marcas.OrderBy(m => m.Nombre))
+                    {
+                        <tr>
+                            <td>@item.Nombre</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary" title="Editar"
+                                        onclick="openEditMarcaModal(@item.IDMarca)">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar"
+                                        onclick="confirmDeleteMarca(@item.IDMarca, '@item.Nombre')">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="alert alert-info mb-0">No hay marcas definidas.</div>
+        }
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Modelos de Vehículos</h5>
+        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalAddModelo">
+            <i class="bi bi-plus-circle"></i> Nuevo Modelo
+        </button>
+    </div>
+    <div class="card-body">
+        @if (Model.Modelos.Any())
+        {
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>Marca</th>
+                        <th>Nombre Modelo</th>
+                        <th style="width: 120px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Modelos.OrderBy(m => m.MarcaNombre).ThenBy(m => m.Nombre)) // Asumiendo que ModeloViewModel tiene MarcaNombre
+                    {
+                        <tr>
+                            <td>@item.MarcaNombre</td>
+                            <td>@item.Nombre</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary" title="Editar"
+                                        onclick="openEditModeloModal(@item.IDModelo)">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar"
+                                        onclick="confirmDeleteModelo(@item.IDModelo, '@item.Nombre')">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="alert alert-info mb-0">No hay modelos definidos.</div>
+        }
+    </div>
+</div>
+
+
+<div class="modal fade" id="modalAddMarca" tabindex="-1" aria-labelledby="modalAddMarcaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAddMarcaLabel">Nueva Marca</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAddMarca" onsubmit="return false;">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label for="addMarcaNombre" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="addMarcaNombre" required maxlength="50" name="Nombre">
+                        <div class="invalid-feedback">Ingrese un nombre para la marca.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="addMarca()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditMarca" tabindex="-1" aria-labelledby="modalEditMarcaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditMarcaLabel">Editar Marca</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditMarca" onsubmit="return false;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="editMarcaId" name="IDMarca">
+                    <div class="mb-3">
+                        <label for="editMarcaNombre" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="editMarcaNombre" required maxlength="50" name="Nombre">
+                        <div class="invalid-feedback">Ingrese un nombre para la marca.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="updateMarca()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="modalAddModelo" tabindex="-1" aria-labelledby="modalAddModeloLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAddModeloLabel">Nuevo Modelo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAddModelo" onsubmit="return false;">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label for="addModeloMarcaId" class="form-label">Marca *</label>
+                        <select class="form-select" id="addModeloMarcaId" required name="IDMarca" asp-items="@Model.MarcasList">
+                            <option value="">Seleccione una marca...</option>
+                        </select>
+                        <div class="invalid-feedback">Seleccione una marca.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addModeloNombre" class="form-label">Nombre Modelo *</label>
+                        <input type="text" class="form-control" id="addModeloNombre" required maxlength="50" name="Nombre">
+                        <div class="invalid-feedback">Ingrese un nombre para el modelo.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="addModelo()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditModelo" tabindex="-1" aria-labelledby="modalEditModeloLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditModeloLabel">Editar Modelo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditModelo" onsubmit="return false;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="editModeloId" name="IDModelo">
+                    <div class="mb-3">
+                        <label for="editModeloMarcaId" class="form-label">Marca *</label>
+                        <select class="form-select" id="editModeloMarcaId" required name="IDMarca" asp-items="@Model.MarcasList">
+                            <option value="">Seleccione una marca...</option>
+                        </select>
+                        <div class="invalid-feedback">Seleccione una marca.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editModeloNombre" class="form-label">Nombre Modelo *</label>
+                        <input type="text" class="form-control" id="editModeloNombre" required maxlength="50" name="Nombre">
+                        <div class="invalid-feedback">Ingrese un nombre para el modelo.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="updateModelo()">Guardar Cambios</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -183,6 +508,7 @@
             </div>
             <div class="modal-body">
                 <form id="formAddCombustible">
+                    @Html.AntiForgeryToken()
                     <div class="mb-3">
                         <label for="addCombustibleDesc" class="form-label">Descripción</label>
                         <input type="text" class="form-control" id="addCombustibleDesc" required maxlength="50">
@@ -207,6 +533,7 @@
             </div>
             <div class="modal-body">
                 <form id="formEditCombustible">
+                    @Html.AntiForgeryToken()
                     <input type="hidden" id="editCombustibleId">
                     <div class="mb-3">
                         <label for="editCombustibleDesc" class="form-label">Descripción</label>
@@ -233,6 +560,7 @@
             </div>
             <div class="modal-body">
                 <form id="formAddServicio">
+                    @Html.AntiForgeryToken()
                     <div class="row g-3">
                         <div class="col-md-12">
                             <label for="addServicioNombre" class="form-label">Nombre</label>
@@ -270,6 +598,7 @@
             </div>
             <div class="modal-body">
                 <form id="formEditServicio">
+                    @Html.AntiForgeryToken()
                     <input type="hidden" id="editServicioId">
                     <div class="row g-3">
                         <div class="col-md-12">
@@ -298,214 +627,508 @@
         </div>
     </div>
 </div>
+<div id="loading-overlay">
+    <div class="spinner"></div>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        // --- FUNCIONES CRUD PARA TIPOS DE COMBUSTIBLE ---
+        // --- LOADER HELPER FUNCTIONS ---
+        const loader = document.getElementById('loading-overlay');
+        function showLoader() {
+            if (loader) loader.style.display = 'flex';
+        }
+        function hideLoader() {
+            if (loader) loader.style.display = 'none';
+        }
 
-        // Abrir modal Editar Combustible (llena el form con datos actuales)
-        async function openEditCombustibleModal(id, currentDesc) {
+        // --- FUNCIÓN HELPER PARA OBTENER EL TOKEN ---
+        function getAntiForgeryToken(formId) {
+            const form = document.getElementById(formId);
+            if (form) {
+                const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+                if (tokenInput) return tokenInput.value;
+            }
+            const globalToken = document.querySelector('form[asp-action="Settings"] input[name="__RequestVerificationToken"]');
+            if (globalToken) return globalToken.value;
+            console.error("Anti-forgery token no encontrado.");
+            return "";
+        }
+
+        // --- FUNCIONES CRUD PARA TIPOS DE COMBUSTIBLE (Funcionan) ---
+
+        function openEditCombustibleModal(id, currentDesc) {
             document.getElementById('editCombustibleId').value = id;
             document.getElementById('editCombustibleDesc').value = currentDesc;
             var myModal = new bootstrap.Modal(document.getElementById('modalEditCombustible'));
             myModal.show();
         }
 
-        // Llamada AJAX para Añadir Combustible
         async function addCombustible() {
             const descInput = document.getElementById('addCombustibleDesc');
             if (!descInput.checkValidity()) {
-                 descInput.classList.add('is-invalid');
-                 return; // Detener si el campo no es válido
+                descInput.classList.add('is-invalid');
+                return;
             }
-             descInput.classList.remove('is-invalid'); // Quitar posible error previo
+            descInput.classList.remove('is-invalid');
 
+            showLoader();
             const data = { descripcion: descInput.value };
+            const token = getAntiForgeryToken('formAddCombustible');
+
             try {
-                const response = await fetch('/api/tiposcombustible', { // URL directa a la API
+                const response = await fetch('/Admin/CreateCombustible', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
                     body: JSON.stringify(data)
                 });
+
                 if (response.ok) {
-                    location.reload(); // Recargar la página si tiene éxito
+                    location.reload();
+                    return;
                 } else {
-                    const error = await response.json();
-                    alert(`Error al añadir: ${error.message || response.statusText}`);
+                    const error = await response.json().catch(() => ({ message: response.statusText }));
+                    alert(`Error al añadir: ${error.message || "Error desconocido"}`);
                 }
             } catch (error) {
                 console.error("Error en addCombustible:", error);
                 alert('Error de red al añadir el tipo de combustible.');
+            } finally {
+                hideLoader();
             }
         }
 
-        // Llamada AJAX para Actualizar Combustible
         async function updateCombustible() {
-             const id = document.getElementById('editCombustibleId').value;
-             const descInput = document.getElementById('editCombustibleDesc');
-             if (!descInput.checkValidity()) {
-                 descInput.classList.add('is-invalid');
-                 return;
+            const id = document.getElementById('editCombustibleId').value;
+            const descInput = document.getElementById('editCombustibleDesc');
+            if (!descInput.checkValidity()) {
+                descInput.classList.add('is-invalid');
+                return;
             }
             descInput.classList.remove('is-invalid');
 
-            const data = { descripcion: descInput.value };
-             try {
-                const response = await fetch(`/api/tiposcombustible/${id}`, { // URL directa a la API
+            showLoader();
+            const data = { IdCombustible: parseInt(id), descripcion: descInput.value };
+            const token = getAntiForgeryToken('formEditCombustible');
+
+            try {
+                const response = await fetch(`/Admin/EditCombustible/${id}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
                     body: JSON.stringify(data)
                 });
-                if (response.ok) { // Espera 204 No Content
+
+                if (response.ok) {
                     location.reload();
+                    return;
                 } else {
-                    const error = await response.json();
-                    alert(`Error al actualizar: ${error.message || response.statusText}`);
+                    const error = await response.json().catch(() => ({ message: response.statusText }));
+                    alert(`Error al actualizar: ${error.message || "Error desconocido"}`);
                 }
             } catch (error) {
-                 console.error("Error en updateCombustible:", error);
+                console.error("Error en updateCombustible:", error);
                 alert('Error de red al actualizar el tipo de combustible.');
+            } finally {
+                hideLoader();
             }
         }
 
-        // Confirmación y Llamada AJAX para Eliminar Combustible
         async function confirmDeleteCombustible(id, desc) {
             if (confirm(`¿Está seguro que desea eliminar el tipo de combustible "${desc}"?`)) {
-                 try {
-                    const response = await fetch(`/api/tiposcombustible/${id}`, { // URL directa a la API
-                        method: 'DELETE'
+                showLoader();
+                const token = getAntiForgeryToken('formEditCombustible');
+
+                try {
+                    const response = await fetch(`/Admin/DeleteCombustible/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'RequestVerificationToken': token }
                     });
-                    if (response.ok) { // Espera 204 No Content
+                    if (response.ok) {
                         location.reload();
+                        return;
                     } else {
-                        const error = await response.json(); // Leer cuerpo de error (ej: Conflict)
-                        alert(`Error al eliminar: ${error.message || response.statusText}`);
+                        const error = await response.json().catch(() => ({ message: response.statusText }));
+                        alert(`Error al eliminar: ${error.message || "Error desconocido"}`);
                     }
                 } catch (error) {
-                     console.error("Error en deleteCombustible:", error);
+                    console.error("Error en deleteCombustible:", error);
                     alert('Error de red al eliminar el tipo de combustible.');
+                } finally {
+                    hideLoader();
                 }
             }
         }
 
-         // --- FUNCIONES CRUD PARA TIPOS DE SERVICIO --- (Similares a las de Combustible)
+        // --- FUNCIONES CRUD PARA MARCAS (Corregidas para usar fetch directo) ---
 
-         // Abrir modal Editar Servicio (requiere obtener datos del servicio por ID)
-         async function openEditServicioModal(id) {
-             try {
-                const response = await fetch(`/api/tiposervicios/${id}`); // GET por ID
+        async function openEditMarcaModal(id) {
+            try {
+                const response = await fetch(`/Admin/GetMarca/${id}`);
+                if (!response.ok) throw new Error('Marca no encontrada');
+                const marca = await response.json();
+                document.getElementById('editMarcaId').value = marca.idMarca;
+                document.getElementById('editMarcaNombre').value = marca.nombre;
+                var myModal = new bootstrap.Modal(document.getElementById('modalEditMarca'));
+                myModal.show();
+            } catch (error) {
+                alert(`Error al cargar marca: ${error.message}`);
+            }
+        }
+
+        async function addMarca() {
+            const form = document.getElementById('formAddMarca');
+            if (!form.checkValidity()) {
+                form.classList.add('was-validated');
+                return;
+            }
+
+            showLoader();
+            const data = { Nombre: document.getElementById('addMarcaNombre').value };
+            const token = getAntiForgeryToken('formAddMarca');
+
+            try {
+                const response = await fetch('/Admin/CreateMarca', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    location.reload();
+                    return;
+                } else {
+                    const error = await response.json().catch(() => ({ message: response.statusText }));
+                    alert(`Error al añadir marca: ${error.message || "Error desconocido"}`);
+                }
+            } catch (error) {
+                console.error("Error en addMarca:", error);
+                alert('Error de red al añadir la marca.');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        async function updateMarca() {
+            const form = document.getElementById('formEditMarca');
+            if (!form.checkValidity()) {
+                form.classList.add('was-validated');
+                return;
+            }
+
+            showLoader();
+            const id = document.getElementById('editMarcaId').value;
+            const data = {
+                IDMarca: parseInt(id),
+                Nombre: document.getElementById('editMarcaNombre').value
+            };
+            const token = getAntiForgeryToken('formEditMarca');
+
+            try {
+                const response = await fetch(`/Admin/EditMarca/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    location.reload();
+                    return;
+                } else {
+                    const error = await response.json().catch(() => ({ message: response.statusText }));
+                    alert(`Error al actualizar marca: ${error.message || "Error desconocido"}`);
+                }
+            } catch (error) {
+                console.error("Error en updateMarca:", error);
+                alert('Error de red al actualizar la marca.');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        async function confirmDeleteMarca(id, nombre) {
+            if (confirm(`¿Está seguro que desea eliminar la marca "${nombre}"? Esta acción no se puede deshacer.`)) {
+                showLoader();
+                const token = getAntiForgeryToken('formEditMarca');
+
+                try {
+                    const response = await fetch(`/Admin/DeleteMarca/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'RequestVerificationToken': token }
+                    });
+
+                    if (response.ok) {
+                        location.reload();
+                        return;
+                    } else {
+                        const error = await response.json().catch(() => ({ message: response.statusText }));
+                        alert(`Error al eliminar marca: ${error.message || "Error desconocido"}`);
+                    }
+                } catch (error) {
+                    console.error("Error en deleteMarca:", error);
+                    alert('Error de red al eliminar la marca.');
+                } finally {
+                    hideLoader();
+                }
+            }
+        }
+
+        // --- FUNCIONES CRUD PARA MODELOS (Corregidas para usar fetch directo) ---
+
+        async function openEditModeloModal(id) {
+            try {
+                const response = await fetch(`/Admin/GetModelo/${id}`);
+                if (!response.ok) throw new Error('Modelo no encontrado');
+                const modelo = await response.json();
+                document.getElementById('editModeloId').value = modelo.idModelo;
+                document.getElementById('editModeloNombre').value = modelo.nombre;
+                document.getElementById('editModeloMarcaId').value = modelo.idMarca;
+                var myModal = new bootstrap.Modal(document.getElementById('modalEditModelo'));
+                myModal.show();
+            } catch (error) {
+                alert(`Error al cargar modelo: ${error.message}`);
+            }
+        }
+
+        async function addModelo() {
+            const form = document.getElementById('formAddModelo');
+            if (!form.checkValidity()) {
+                form.classList.add('was-validated');
+                return;
+            }
+
+            showLoader();
+            const data = {
+                IDMarca: parseInt(document.getElementById('addModeloMarcaId').value),
+                Nombre: document.getElementById('addModeloNombre').value
+            };
+            const token = getAntiForgeryToken('formAddModelo');
+
+            try {
+                const response = await fetch('/Admin/CreateModelo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    location.reload();
+                    return;
+                } else {
+                    const error = await response.json().catch(() => ({ message: response.statusText }));
+                    alert(`Error al añadir modelo: ${error.message || "Error desconocido"}`);
+                }
+            } catch (error) {
+                console.error("Error en addModelo:", error);
+                alert('Error de red al añadir el modelo.');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        async function updateModelo() {
+            const form = document.getElementById('formEditModelo');
+            if (!form.checkValidity()) {
+                form.classList.add('was-validated');
+                return;
+            }
+
+            showLoader();
+            const id = document.getElementById('editModeloId').value;
+            const data = {
+                IDModelo: parseInt(id),
+                IDMarca: parseInt(document.getElementById('editModeloMarcaId').value),
+                Nombre: document.getElementById('editModeloNombre').value
+            };
+            const token = getAntiForgeryToken('formEditModelo');
+
+            try {
+                const response = await fetch(`/Admin/EditModelo/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    location.reload();
+                    return;
+                } else {
+                    const error = await response.json().catch(() => ({ message: response.statusText }));
+                    alert(`Error al actualizar modelo: ${error.message || "Error desconocido"}`);
+                }
+            } catch (error) {
+                console.error("Error en updateModelo:", error);
+                alert('Error de red al actualizar el modelo.');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        async function confirmDeleteModelo(id, nombre) {
+            if (confirm(`¿Está seguro que desea eliminar el modelo "${nombre}"? Esta acción no se puede deshacer.`)) {
+                showLoader();
+                const token = getAntiForgeryToken('formEditModelo');
+
+                try {
+                    const response = await fetch(`/Admin/DeleteModelo/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'RequestVerificationToken': token }
+                    });
+
+                    if (response.ok) {
+                        location.reload();
+                        return;
+                    } else {
+                        const error = await response.json().catch(() => ({ message: response.statusText }));
+                        alert(`Error al eliminar modelo: ${error.message || "Error desconocido"}`);
+                    }
+                } catch (error) {
+                    console.error("Error en deleteModelo:", error);
+                    alert('Error de red al eliminar el modelo.');
+                } finally {
+                    hideLoader();
+                }
+            }
+        }
+
+        // --- FUNCIONES CRUD PARA TIPOS DE SERVICIO (Funcionan) ---
+
+        async function openEditServicioModal(id) {
+            try {
+                const response = await fetch(`/Admin/GetServicio/${id}`);
                 if (!response.ok) throw new Error('Servicio no encontrado');
                 const servicio = await response.json();
-
                 document.getElementById('editServicioId').value = servicio.idTipoServicio;
                 document.getElementById('editServicioNombre').value = servicio.nombre;
-                document.getElementById('editServicioPrecio').value = servicio.precio;
-                document.getElementById('editServicioTiempo').value = servicio.tiempoEstimado;
+                document.getElementById('editServicioPrecio').value = servicio.precio; // (Corregido de tu código anterior)
+                document.getElementById('editServicioTiempo').value = servicio.tiempoEstimado; // (Corregido de tu código anterior)
                 document.getElementById('editServicioDesc').value = servicio.descripcion || '';
-
                 var myModal = new bootstrap.Modal(document.getElementById('modalEditServicio'));
                 myModal.show();
-             } catch (error) {
-                 console.error("Error al cargar datos para editar servicio:", error);
-                 alert('No se pudo cargar la información del servicio para editar.');
-             }
-         }
+            } catch (error) {
+                console.error("Error al cargar datos para editar servicio:", error);
+                alert('No se pudo cargar la información del servicio para editar.');
+            }
+        }
 
-        // Llamada AJAX para Añadir Servicio
         async function addServicio() {
             const form = document.getElementById('formAddServicio');
             if (!form.checkValidity()) {
-                 // Bootstrap se encarga de mostrar errores si usas 'required' etc.
-                 form.classList.add('was-validated');
-                 return;
+                form.classList.add('was-validated');
+                return;
             }
 
+            showLoader();
             const data = {
                 nombre: document.getElementById('addServicioNombre').value,
                 precio: parseFloat(document.getElementById('addServicioPrecio').value),
-                tiempoEstimado: parseInt(document.getElementById('addServicioTiempo').value),
+                tiempoEstimado: parseInt(document.getElementById('addServicioTiempo').value), // Corregido
                 descripcion: document.getElementById('addServicioDesc').value || null
             };
+            const token = getAntiForgeryToken('formAddServicio');
 
             try {
-                const response = await fetch('/api/tiposervicios', { // URL directa a la API
+                const response = await fetch('/Admin/CreateServicio', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
                     body: JSON.stringify(data)
                 });
                 if (response.ok) {
                     location.reload();
+                    return;
                 } else {
-                     const error = await response.json();
-                     alert(`Error al añadir: ${error.message || response.statusText}`);
+                    const error = await response.json().catch(() => ({ message: response.statusText }));
+                    alert(`Error al añadir: ${error.message || "Error desconocido"}`);
                 }
             } catch (error) {
-                 console.error("Error en addServicio:", error);
+                console.error("Error en addServicio:", error);
                 alert('Error de red al añadir el tipo de servicio.');
+            } finally {
+                hideLoader();
             }
         }
 
-        // Llamada AJAX para Actualizar Servicio
         async function updateServicio() {
             const form = document.getElementById('formEditServicio');
-             if (!form.checkValidity()) {
-                 form.classList.add('was-validated');
-                 return;
+            if (!form.checkValidity()) {
+                form.classList.add('was-validated');
+                return;
             }
 
+            showLoader();
             const id = document.getElementById('editServicioId').value;
             const data = {
+                IdTipoServicio: parseInt(id),
                 nombre: document.getElementById('editServicioNombre').value,
                 precio: parseFloat(document.getElementById('editServicioPrecio').value),
-                tiempoEstimado: parseInt(document.getElementById('editServicioTiempo').value),
+                tiempoEstimado: parseInt(document.getElementById('editServicioTiempo').value), // Corregido
                 descripcion: document.getElementById('editServicioDesc').value || null
             };
+            const token = getAntiForgeryToken('formEditServicio');
 
-             try {
-                const response = await fetch(`/api/tiposervicios/${id}`, { // URL directa a la API
+            try {
+                const response = await fetch(`/Admin/EditServicio/${id}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
                     body: JSON.stringify(data)
                 });
-                if (response.ok) { // Espera 204 No Content
+                if (response.ok) {
                     location.reload();
+                    return;
                 } else {
-                     const error = await response.json();
-                    alert(`Error al actualizar: ${error.message || response.statusText}`);
+                    const error = await response.json().catch(() => ({ message: response.statusText }));
+                    alert(`Error al actualizar: ${error.message || "Error desconocido"}`);
                 }
             } catch (error) {
-                 console.error("Error en updateServicio:", error);
+                console.error("Error en updateServicio:", error);
                 alert('Error de red al actualizar el tipo de servicio.');
+            } finally {
+                hideLoader();
             }
         }
 
-
-        // Confirmación y Llamada AJAX para Eliminar Servicio
         async function confirmDeleteServicio(id, nombre) {
             if (confirm(`¿Está seguro que desea eliminar el tipo de servicio "${nombre}"?`)) {
-                 try {
-                    const response = await fetch(`/api/tiposervicios/${id}`, { // URL directa a la API
-                        method: 'DELETE'
+                showLoader();
+                const token = getAntiForgeryToken('formEditServicio');
+
+                try {
+                    const response = await fetch(`/Admin/DeleteServicio/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'RequestVerificationToken': token }
                     });
-                    if (response.ok) { // Espera 204 No Content
+                    if (response.ok) {
                         location.reload();
+                        return;
                     } else {
-                         const error = await response.json();
-                        alert(`Error al eliminar: ${error.message || response.statusText}`);
+                        const error = await response.json().catch(() => ({ message: response.statusText }));
+                        alert(`Error al eliminar: ${error.message || "Error desconocido"}`);
                     }
                 } catch (error) {
-                     console.error("Error en deleteServicio:", error);
+                    console.error("Error en deleteServicio:", error);
                     alert('Error de red al eliminar el tipo de servicio.');
+                } finally {
+                    hideLoader();
                 }
             }
         }
 
-        // Exponer funciones al scope global para que los `onclick` las encuentren
+        // --- Exponer funciones al scope global ---
         window.openEditCombustibleModal = openEditCombustibleModal;
         window.addCombustible = addCombustible;
         window.updateCombustible = updateCombustible;
         window.confirmDeleteCombustible = confirmDeleteCombustible;
+
+        window.openEditMarcaModal = openEditMarcaModal;
+        window.addMarca = addMarca;
+        window.updateMarca = updateMarca;
+        window.confirmDeleteMarca = confirmDeleteMarca;
+
+        window.openEditModeloModal = openEditModeloModal;
+        window.addModelo = addModelo;
+        window.updateModelo = updateModelo;
+        window.confirmDeleteModelo = confirmDeleteModelo;
+
         window.openEditServicioModal = openEditServicioModal;
         window.addServicio = addServicio;
         window.updateServicio = updateServicio;

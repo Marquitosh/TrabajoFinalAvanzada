@@ -3,36 +3,42 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AvanzadaAPI.Models
 {
+    [Table("Vehiculos")]
     public class Vehiculo
     {
         [Key]
         public int IDVehiculo { get; set; }
 
         [Required]
-        [MaxLength(50)]
-        public string Marca { get; set; } = string.Empty;
-
-        [Required]
-        [MaxLength(50)]
-        public string Modelo { get; set; } = string.Empty;
-
-        [Required]
         public int Year { get; set; }
 
         [Required]
-        [MaxLength(15)]
-        public string Patente { get; set; } = string.Empty;
+        [StringLength(15)]
+        public string Patente { get; set; }
 
-        [ForeignKey("TipoCombustible")]
-        public int IDCombustible { get; set; }
-        public TipoCombustible? TipoCombustible { get; set; }
-
+        public int? IDCombustible { get; set; } // Nullable si se permite no especificar
         public string? Observaciones { get; set; }
 
-        [ForeignKey("Usuario")]
+        [Required]
         public int IDUsuario { get; set; }
-        public Usuario? Usuario { get; set; }
 
-        public ICollection<Turno>? Turnos { get; set; }
+        [Required]
+        public int IDMarca { get; set; }
+
+        [Required]
+        public int IDModelo { get; set; }
+
+        // --- Navegación ---
+        [ForeignKey("IDUsuario")]
+        public virtual Usuario Usuario { get; set; }
+
+        [ForeignKey("IDCombustible")]
+        public virtual TipoCombustible TipoCombustible { get; set; }
+
+        [ForeignKey("IDMarca")]
+        public virtual Marca Marca { get; set; }
+
+        [ForeignKey("IDModelo")]
+        public virtual Modelo Modelo { get; set; }
     }
 }

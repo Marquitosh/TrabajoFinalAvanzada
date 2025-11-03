@@ -394,14 +394,17 @@ namespace AvanzadaAPI.Controllers
             {
                 var vehiculos = await _context.Vehiculos
                     .Where(v => v.IDUsuario == id)
+                    .Include(v => v.Marca)
+                    .Include(v => v.Modelo)
                     .Include(v => v.TipoCombustible)
-                    .Select(v => new VehiculoViewModel
+                    .Select(v => new AvanzadaAPI.Controllers.UsuariosController.VehiculoViewModel 
                     {
                         IDVehiculo = v.IDVehiculo,
-                        Marca = v.Marca,
-                        Modelo = v.Modelo,
+                        Marca = v.Marca.Nombre,
+                        Modelo = v.Modelo.Nombre,
                         Patente = v.Patente,
-                        Year = v.Year
+                        Year = v.Year,
+                        CombustibleDescripcion = v.TipoCombustible != null ? v.TipoCombustible.Descripcion : "No especificado"
                     })
                     .ToListAsync();
 
@@ -414,6 +417,41 @@ namespace AvanzadaAPI.Controllers
             }
         }
 
+        // POST: api/usuarios/{idUsuario}/vehiculos
+        [HttpPost("{idUsuario}/vehiculos")]
+        public async Task<ActionResult<Vehiculo>> PostVehiculo(int idUsuario, [FromBody] VehiculoCreateDto vehiculoDto)
+        {
+            // El ModelState ahora valida el DTO (que solo tiene IDs)
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Mapeamos del DTO al Modelo de base de datos
+            var vehiculo = new Vehiculo
+            {
+                Year = vehiculoDto.Year,
+                Patente = vehiculoDto.Patente,
+                IDCombustible = vehiculoDto.IDCombustible,
+                Observaciones = vehiculoDto.Observaciones,
+                IDUsuario = idUsuario,
+                IDMarca = vehiculoDto.IDMarca,
+                IDModelo = vehiculoDto.IDModelo
+            };
+
+            _context.Vehiculos.Add(vehiculo);
+            await _context.SaveChangesAsync();
+
+            // NOTA: Tu DTO de lectura (VehiculoDto) necesita ser actualizado
+            // para devolver los nombres de Marca y Modelo, no los objetos.
+            // Por ahora, devolvemos el objeto creado.
+
+            // Asumiendo que tienes un GetVehiculo en este controller
+            // return CreatedAtAction(nameof(GetVehiculo), new { idUsuario = vehiculo.IDUsuario, idVehiculo = vehiculo.IDVehiculo }, vehiculo);
+
+            // Si no lo tienes, simplemente devuelve Ok:
+            return Ok(vehiculo);
+        }
 
         // Endpoints para recuperación de contraseña
         [HttpPost("forgot-password")]
@@ -573,6 +611,7 @@ namespace AvanzadaAPI.Controllers
             public string Modelo { get; set; } = string.Empty;
             public string Patente { get; set; } = string.Empty;
             public int Year { get; set; }
+            public string CombustibleDescripcion { get; set; }
         }
     }
 }

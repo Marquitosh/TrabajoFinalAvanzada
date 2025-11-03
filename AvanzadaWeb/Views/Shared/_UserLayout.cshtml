@@ -32,9 +32,33 @@
         .main-content {
             padding: 20px;
         }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.85); /* Color de texto claro para navbar oscura */
+            margin-right: 1rem; /* Espacio antes del botón de logout */
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 0.5rem;
+            border: 2px solid #dee2e6;
+        }
     </style>
 </head>
 <body>
+    @{
+        var userJson = Context.Session.GetString("User");
+        AvanzadaWeb.Models.SessionUser user = null;
+        if (!string.IsNullOrEmpty(userJson))
+        {
+            user = System.Text.Json.JsonSerializer.Deserialize<AvanzadaWeb.Models.SessionUser>(userJson);
+        }
+    }
     <header>
         <nav class="navbar navbar-dark bg-primary">
             <div class="container-fluid">
@@ -47,8 +71,17 @@
                         data-bs-target="#offcanvasSidebar" aria-controls="offcanvasSidebar">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-
                 <div class="d-none d-lg-flex">
+                    @if (user != null)
+                    {
+                        <div class="user-info">
+                            @if (!string.IsNullOrEmpty(user.Foto))
+                            {
+                                <img src="data:image/jpeg;base64,@user.Foto" alt="Avatar" class="user-avatar">
+                            }
+                            <span>Hola, @user.Nombre</span>
+                        </div>
+                    }
                     <a class="btn btn-outline-light btn-sm" asp-controller="Account" asp-action="Logout">
                         <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
                     </a>
