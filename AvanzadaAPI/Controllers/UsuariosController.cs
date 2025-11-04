@@ -120,6 +120,8 @@ namespace AvanzadaAPI.Controllers
                     return NotFound();
                 }
 
+                // 2. (NUEVO) Desconectar la entidad del DbContext
+                _context.Entry(usuario).State = EntityState.Detached;
                 usuario.Contraseña = Array.Empty<byte>();
                 usuario.ContraseñaString = string.Empty;
 
@@ -253,12 +255,17 @@ namespace AvanzadaAPI.Controllers
                     );
                 }
 
+                // 2. (NUEVO) Desconectar la entidad del DbContext
+                _context.Entry(usuario).State = EntityState.Detached;
+
                 usuario.Contraseña = Array.Empty<byte>();
                 usuario.ContraseñaString = string.Empty;
 
                 if (usuario.NivelUsuario == null)
                 {
-                    usuario.NivelUsuario = await _context.NivelesUsuario.FindAsync(usuario.IDNivel);
+                    usuario.NivelUsuario = await _context.NivelesUsuario
+                                    .AsNoTracking()
+                                    .FirstOrDefaultAsync(n => n.IDNivel == usuario.IDNivel);
                 }
 
                 return Ok(usuario);
@@ -317,6 +324,9 @@ namespace AvanzadaAPI.Controllers
                     "Usuario creado",
                     $"ID: {usuario.IDUsuario}, Nombre: {usuario.Nombre} {usuario.Apellido}, Email: {usuario.Email}"
                 );
+
+                // 2. (NUEVO) Desconectar la entidad del DbContext
+                _context.Entry(usuario).State = EntityState.Detached;
 
                 usuario.Contraseña = Array.Empty<byte>();
                 usuario.ContraseñaString = string.Empty;
@@ -404,6 +414,8 @@ namespace AvanzadaAPI.Controllers
 
                 await _context.SaveChangesAsync();
 
+                // 2. (NUEVO) Desconectar la entidad del DbContext
+                _context.Entry(usuario).State = EntityState.Detached;
                 usuario.Contraseña = Array.Empty<byte>();
 
                 return Ok(usuario);
@@ -449,92 +461,6 @@ namespace AvanzadaAPI.Controllers
             {
                 await RegistrarLog("Error", "Error actualizar rol", $"ID: {id} - {ex.Message}");
                 return StatusCode(500, $"Error interno: {ex.Message}");
-            }
-        }
-
-        [HttpPost("forgot-password")]
-        public async Task<ActionResult> ForgotPassword(ForgotPasswordRequest request)
-        {
-            try
-            {
-                var usuario = await _context.Usuarios
-                    .FirstOrDefaultAsync(u => u.Email == request.Email);
-
-                if (usuario == null)
-                {
-                    // LOG: Intento recuperación email no existente
-                    await RegistrarLog(
-                        "Warning",
-                        "Recuperación email inexistente",
-                        $"Email: {request.Email}"
-                    );
-                    return Ok(new { message = "Si el email existe, se enviarán instrucciones de recuperación." });
-                }
-
-                var token = await _tokenService.GeneratePasswordResetTokenAsync(usuario.IDUsuario);
-
-                var emailSent = await _emailService.SendPasswordResetEmailAsync(
-                    usuario.Email,
-                    usuario.NombreCompleto,
-                    token
-                );
-
-                if (!emailSent)
-                {
-                    _logger.LogError("Falló el envío de email de recuperación a {Email}", usuario.Email);
-                    return StatusCode(500, new { message = "Error al enviar el email de recuperación." });
-                }
-
-                // LOG: Email recuperación enviado
-                await RegistrarLog(
-                    "Info",
-                    "Email recuperación enviado",
-                    $"Usuario: {usuario.Nombre} {usuario.Apellido} (ID: {usuario.IDUsuario})"
-                );
-
-                return Ok(new { message = "Se han enviado instrucciones de recuperación a tu email." });
-            }
-            catch (Exception ex)
-            {
-                await RegistrarLog("Error", "Error recuperar contraseña", $"Email: {request.Email} - {ex.Message}");
-                return StatusCode(500, new { message = "Error interno del servidor." });
-            }
-        }
-
-        [HttpPost("reset-password")]
-        public async Task<ActionResult> ResetPassword(ResetPasswordRequest request)
-        {
-            try
-            {
-                var resetToken = await _tokenService.ValidateTokenAsync(request.Token);
-                if (resetToken == null)
-                {
-                    // LOG: Token inválido o expirado
-                    await RegistrarLog(
-                        "Warning",
-                        "Token reset inválido",
-                        $"Token utilizado: {request.Token.Substring(0, Math.Min(10, request.Token.Length))}..."
-                    );
-                    return BadRequest(new { message = "Token inválido o expirado." });
-                }
-
-                resetToken.Usuario.Contraseña = HashPassword(request.NewPassword);
-                await _tokenService.MarkTokenAsUsedAsync(request.Token);
-                await _context.SaveChangesAsync();
-
-                // LOG: Contraseña reseteada exitosamente
-                await RegistrarLog(
-                    "Warning",
-                    "Contraseña reseteada",
-                    $"Usuario ID: {resetToken.Usuario.IDUsuario}"
-                );
-
-                return Ok(new { message = "Contraseña actualizada correctamente." });
-            }
-            catch (Exception ex)
-            {
-                await RegistrarLog("Error", "Error reset contraseña", ex.Message);
-                return StatusCode(500, new { message = "Error interno del servidor." });
             }
         }
 
@@ -669,7 +595,7 @@ namespace AvanzadaAPI.Controllers
             return Ok(vehiculo);
         }
 
-        // Endpoints para recuperación de contraseña
+        
         [HttpPost("forgot-password")]
         public async Task<ActionResult> ForgotPassword(ForgotPasswordRequest request)
         {
@@ -680,6 +606,12 @@ namespace AvanzadaAPI.Controllers
 
                 if (usuario == null)
                 {
+                    // LOG: Intento recuperación email no existente
+                    await RegistrarLog(
+                        "Warning",
+                        "Recuperación email inexistente",
+                        $"Email: {request.Email}"
+                    );
                     return Ok(new { message = "Si el email existe, se enviarán instrucciones de recuperación." });
                 }
 
@@ -694,15 +626,21 @@ namespace AvanzadaAPI.Controllers
                 if (!emailSent)
                 {
                     _logger.LogError("Falló el envío de email de recuperación a {Email}", usuario.Email);
-                    return StatusCode(500, new { message = "Error al enviar el email de recuperación. Por favor, intente más tarde." });
+                    return StatusCode(500, new { message = "Error al enviar el email de recuperación." });
                 }
 
-                _logger.LogInformation("Email de recuperación enviado exitosamente a {Email}", usuario.Email);
+                // LOG: Email recuperación enviado
+                await RegistrarLog(
+                    "Info",
+                    "Email recuperación enviado",
+                    $"Usuario: {usuario.Nombre} {usuario.Apellido} (ID: {usuario.IDUsuario})"
+                );
+
                 return Ok(new { message = "Se han enviado instrucciones de recuperación a tu email." });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error en ForgotPassword para email: {Email}", request.Email);
+                await RegistrarLog("Error", "Error recuperar contraseña", $"Email: {request.Email} - {ex.Message}");
                 return StatusCode(500, new { message = "Error interno del servidor." });
             }
         }
@@ -715,20 +653,31 @@ namespace AvanzadaAPI.Controllers
                 var resetToken = await _tokenService.ValidateTokenAsync(request.Token);
                 if (resetToken == null)
                 {
+                    // LOG: Token inválido o expirado
+                    await RegistrarLog(
+                        "Warning",
+                        "Token reset inválido",
+                        $"Token utilizado: {request.Token.Substring(0, Math.Min(10, request.Token.Length))}..."
+                    );
                     return BadRequest(new { message = "Token inválido o expirado." });
                 }
 
                 resetToken.Usuario.Contraseña = HashPassword(request.NewPassword);
-
                 await _tokenService.MarkTokenAsUsedAsync(request.Token);
-
                 await _context.SaveChangesAsync();
+
+                // LOG: Contraseña reseteada exitosamente
+                await RegistrarLog(
+                    "Warning",
+                    "Contraseña reseteada",
+                    $"Usuario ID: {resetToken.Usuario.IDUsuario}"
+                );
 
                 return Ok(new { message = "Contraseña actualizada correctamente." });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error en ResetPassword con token: {Token}", request.Token);
+                await RegistrarLog("Error", "Error reset contraseña", ex.Message);
                 return StatusCode(500, new { message = "Error interno del servidor." });
             }
         }
